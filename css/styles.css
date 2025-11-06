@@ -1,0 +1,218 @@
+/* Custom animations */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #006837; /* UUM Green */
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0056b3; /* UUM Blue */
+}
+
+/* UUM Brand Colors */
+.text-uum-green {
+  color: #006837;
+}
+
+.dark .text-uum-green {
+  color: #00a859; /* Lighter green for dark mode */
+}
+
+.bg-uum-green {
+  background-color: #006837;
+}
+
+.hover\:bg-uum-green:hover {
+  background-color: #00562c;
+}
+
+.text-uum-gold {
+  color: #ffd700;
+}
+
+.bg-uum-gold {
+  background-color: #ffd700;
+}
+
+.text-uum-blue {
+  color: #0056b3;
+}
+
+.bg-uum-blue {
+  background-color: #0056b3;
+}
+
+.hover\:bg-uum-blue:hover {
+  background-color: #004599;
+}
+
+/* Mobile responsive improvements */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Improve touch targets */
+  button,
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Better text readability on mobile */
+  p,
+  li {
+    line-height: 1.6;
+  }
+}
+
+/* Loading animation */
+.loading-spinner {
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #006837; /* UUM Green */
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Button animations */
+.btn-uum {
+  background: linear-gradient(135deg, #006837 0%, #0056b3 100%);
+  transition: all 0.3s ease;
+}
+
+.btn-uum:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0, 104, 55, 0.3);
+}
+
+/* Form styles */
+.form-input {
+  transition: all 0.3s ease;
+}
+
+.form-input:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 104, 55, 0.1);
+  border-color: #006837;
+}
+
+/* Status badges */
+.status-lost {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.status-found {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.status-returned {
+  background: linear-gradient(135deg, #006837 0%, #0056b3 100%);
+}
+
+/* Mobile menu improvements */
+@media (max-width: 767px) {
+  #mobile-menu {
+    backdrop-filter: blur(10px);
+  }
+}
+
+/* Text truncation for mobile */
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Safe area insets for modern mobile devices */
+@supports (padding: max(0px)) {
+  .safe-area-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-area-left {
+    padding-left: max(1rem, env(safe-area-inset-left));
+  }
+
+  .safe-area-right {
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .bg-gray-50 {
+    background-color: white;
+  }
+
+  .dark .bg-gray-800 {
+    background-color: black;
+  }
+
+  .text-gray-600 {
+    color: #4a5568;
+  }
+}
