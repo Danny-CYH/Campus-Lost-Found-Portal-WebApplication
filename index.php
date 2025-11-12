@@ -77,19 +77,19 @@
             <nav class="flex-1 space-y-6">
                 <a href="#features"
                     class="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-uum-green transition-colors py-3 border-b border-gray-200 dark:border-gray-700">
-                    <i class="fas fa-star mr-3"></i>Features
+                    <i class="fas fa-star mr-3"></i>Home
                 </a>
                 <a href="#how-it-works"
                     class="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-uum-green transition-colors py-3 border-b border-gray-200 dark:border-gray-700">
-                    <i class="fas fa-play-circle mr-3"></i>How It Works
+                    <i class="fas fa-play-circle mr-3"></i>Lost Item
                 </a>
                 <a href="#recent-items"
                     class="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-uum-green transition-colors py-3 border-b border-gray-200 dark:border-gray-700">
-                    <i class="fas fa-clock mr-3"></i>Recent Items
+                    <i class="fas fa-clock mr-3"></i>Found Items
                 </a>
                 <a href="#campus-map"
                     class="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-uum-green transition-colors py-3 border-b border-gray-200 dark:border-gray-700">
-                    <i class="fas fa-map mr-3"></i>Campus Map
+                    <i class="fas fa-map mr-3"></i>Messages
                 </a>
             </nav>
 
@@ -139,17 +139,13 @@
                     </button>
 
                     <div class="hidden md:flex space-x-6">
-                        <a href="#features"
-                            class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Features</a>
-                        <a href="#how-it-works"
-                            class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">How
-                            It Works</a>
-                        <a href="#recent-items"
-                            class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Recent
+                        <a href="index.php"
+                            class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Home</a>
+                        <a href="lost-items.php"
+                            class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">List
                             Items</a>
-                        <a href="#campus-map"
-                            class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Campus
-                            Map</a>
+                        <a href="chat.php"
+                            class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Messages</a>
                     </div>
 
                     <?php if (isset($_SESSION['user_id'])): ?>
@@ -162,10 +158,6 @@
                             <a href="auth/login.php"
                                 class="text-uum-green hover:text-uum-blue font-medium px-4 py-2 transition-colors">
                                 <i class="fas fa-sign-in-alt mr-2"></i>Login
-                            </a>
-                            <a href="auth/register.php"
-                                class="bg-gradient-to-r from-uum-green to-uum-blue hover:from-uum-blue hover:to-uum-green text-white px-6 py-2.5 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
-                                <i class="fas fa-user-plus mr-2"></i>Get Started
                             </a>
                         </div>
                     <?php endif; ?>
@@ -203,7 +195,7 @@
                         <?php else: ?>
                             <a href="auth/register.php"
                                 class="bg-gradient-to-r from-uum-green to-uum-blue hover:from-uum-blue hover:to-uum-green text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl text-center">
-                                <i class="fas fa-rocket mr-2"></i>Get Started Free
+                                <i class="fas fa-rocket mr-2"></i>Register Now
                             </a>
                             <a href="#features"
                                 class="border-2 border-uum-green text-uum-green dark:text-uum-gold hover:bg-uum-green hover:text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg transition-all duration-300 text-center">
@@ -726,9 +718,9 @@
                         <i class="fas fa-eye mr-2"></i>View All Items
                     </a>
                 <?php else: ?>
-                    <a href="auth/register.php"
+                    <a href="lost-items.php"
                         class="bg-gradient-to-r from-uum-green to-uum-blue hover:from-uum-blue hover:to-uum-green text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl inline-flex items-center justify-center">
-                        <i class="fas fa-rocket mr-2"></i>Join UUM Find
+                        <i class="fas fa-rocket mr-2"></i>View All Items
                     </a>
                 <?php endif; ?>
             </div>

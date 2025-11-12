@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Campus Lost & Found Portal</title>
+    <title>Login - UUM Campus Lost & Found Portal</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,116 +16,302 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="../css/styles.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        uum: {
+                            green: '#006837',
+                            gold: '#FFD700',
+                            blue: '#0056b3',
+                            light: {
+                                green: '#e8f5e8',
+                                blue: '#e6f0fa'
+                            }
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 
-<body class="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-        <!-- Header -->
-        <div class="text-center">
-            <a href="../index.php" class="flex items-center justify-center space-x-3 mb-8">
-                <div
-                    class="w-12 h-12 bg-gradient-to-r from-primary-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <i class="fas fa-search-location text-white text-xl"></i>
+<body
+    class="bg-gradient-to-br from-uum-light-green to-uum-light-blue dark:from-gray-800 dark:to-gray-900 min-h-screen flex items-center justify-center p-4">
+    <!-- Background Elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-24 -left-24 w-48 h-48 bg-uum-green/10 rounded-full animate-float"></div>
+        <div class="absolute top-1/4 -right-16 w-32 h-32 bg-uum-blue/10 rounded-full animate-float"
+            style="animation-delay: 2s;"></div>
+        <div class="absolute bottom-32 -left-16 w-40 h-40 bg-uum-green/5 rounded-full animate-float"
+            style="animation-delay: 4s;"></div>
+        <div class="absolute -bottom-20 -right-20 w-56 h-56 bg-uum-blue/5 rounded-full animate-float"
+            style="animation-delay: 1s;"></div>
+    </div>
+
+    <div class="w-full max-w-6xl mx-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <!-- Left Side - Brand & Info -->
+            <div class="text-center lg:text-left space-y-8">
+                <!-- Header -->
+                <div class="space-y-4">
+                    <a href="../index.php" class="inline-flex items-center space-x-4">
+                        <div
+                            class="w-16 h-16 bg-gradient-to-r from-uum-green to-uum-blue rounded-2xl flex items-center justify-center shadow-2xl">
+                            <i class="fas fa-search-location text-white text-2xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <h1 class="text-3xl lg:text-4xl font-bold text-uum-green dark:text-uum-gold">
+                                UUM Find
+                            </h1>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm lg:text-base">Lost & Found Portal</p>
+                        </div>
+                    </a>
+
+                    <div
+                        class="bg-uum-green/10 border border-uum-green/20 rounded-2xl p-4 inline-flex items-center space-x-2">
+                        <i class="fas fa-university text-uum-green text-lg"></i>
+                        <span class="text-uum-green font-medium text-sm">Universiti Utara Malaysia</span>
+                    </div>
                 </div>
-                <div>
-                    <span
-                        class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-blue-700 bg-clip-text text-transparent">
-                        CampusFind
-                    </span>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 -mt-1">Lost & Found Portal</p>
+
+                <!-- Features -->
+                <div class="space-y-6">
+                    <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                        Reconnect with Your
+                        <span class="text-uum-green dark:text-uum-gold">Lost Belongings</span>
+                    </h2>
+                    <p class="text-lg text-gray-600 dark:text-gray-300 max-w-md">
+                        Access your UUM Campus Find account to manage lost items, connect with finders, and help others
+                        reunite with their belongings.
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div
+                            class="flex items-center space-x-3 p-3 bg-white/50 dark:bg-gray-800/50 rounded-xl backdrop-blur-sm">
+                            <div class="w-10 h-10 bg-uum-green/10 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-shield-alt text-uum-green"></i>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Secure Login</span>
+                        </div>
+                        <div
+                            class="flex items-center space-x-3 p-3 bg-white/50 dark:bg-gray-800/50 rounded-xl backdrop-blur-sm">
+                            <div class="w-10 h-10 bg-uum-blue/10 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-bolt text-uum-blue"></i>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Instant Access</span>
+                        </div>
+                    </div>
                 </div>
-            </a>
-            <h2 class="text-3xl font-bold text-gray-900 dark:text-white">
-                Welcome back
-            </h2>
-            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                Sign in to your account to continue
-            </p>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-3 gap-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-uum-green dark:text-uum-gold">1.2K+</div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400">Items Found</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-uum-blue">89%</div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400">Return Rate</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600">24/7</div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400">Active</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side - Login Form -->
+            <div
+                class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-gray-700/20 p-8">
+                <!-- Form Header -->
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                        Welcome Back
+                    </h2>
+                    <p class="text-gray-600 dark:text-gray-400 mt-2">
+                        Sign in to your UUM Campus account
+                    </p>
+                </div>
+
+                <!-- Login Form -->
+                <form class="space-y-6" action="process_login.php" method="POST">
+                    <div class="space-y-4">
+                        <!-- Username/Email Field -->
+                        <div>
+                            <label for="username"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-user mr-2 text-uum-green"></i>
+                                Username or Email
+                            </label>
+                            <div class="relative">
+                                <input id="username" name="username" type="text" required
+                                    class="w-full pl-4 pr-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-uum-green focus:border-uum-green transition-all duration-200"
+                                    placeholder="Enter your username or email">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                    <i class="fas fa-check-circle text-green-500 opacity-0 transition-opacity duration-200"
+                                        id="username-check"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Password Field -->
+                        <div>
+                            <label for="password"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-lock mr-2 text-uum-green"></i>
+                                Password
+                            </label>
+                            <div class="relative">
+                                <input id="password" name="password" type="password" required
+                                    class="w-full pl-4 pr-12 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-uum-green focus:border-uum-green transition-all duration-200"
+                                    placeholder="Enter your password">
+                                <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                    id="toggle-password">
+                                    <i class="fas fa-eye text-gray-400 hover:text-uum-green transition-colors"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="remember_me" name="remember_me" type="checkbox"
+                                class="w-4 h-4 text-uum-green focus:ring-uum-green border-gray-300 rounded">
+                            <label for="remember_me" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                                Remember me
+                            </label>
+                        </div>
+
+                        <a href="#" class="text-sm font-medium text-uum-green hover:text-uum-blue transition-colors">
+                            Forgot password?
+                        </a>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit"
+                        class="w-full bg-gradient-to-r from-uum-green to-uum-blue hover:from-uum-blue hover:to-uum-green text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-uum-green focus:ring-offset-2">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        Sign in to your account
+                    </button>
+
+                    <!-- Divider -->
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-white dark:bg-gray-800 text-gray-500">Or continue with</span>
+                        </div>
+                    </div>
+
+                    <!-- Social Login -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button"
+                            class="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                            <i class="fab fa-google text-red-500 mr-2"></i>
+                            Google
+                        </button>
+                        <button type="button"
+                            class="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                            <i class="fab fa-microsoft text-blue-500 mr-2"></i>
+                            Microsoft
+                        </button>
+                    </div>
+
+                    <!-- Register Link -->
+                    <div class="text-center">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">
+                            Don't have an account?
+                            <a href="register.php"
+                                class="font-semibold text-uum-green hover:text-uum-blue transition-colors">
+                                Create one here
+                            </a>
+                        </span>
+                    </div>
+                </form>
+
+                <!-- Demo Credentials -->
+                <div class="mt-6 p-4 bg-uum-green/10 border border-uum-green/20 rounded-xl">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <i class="fas fa-info-circle text-uum-green"></i>
+                        <h4 class="text-sm font-semibold text-uum-green">Demo Access</h4>
+                    </div>
+                    <div class="text-xs text-uum-green space-y-1">
+                        <div class="flex justify-between">
+                            <span>Username:</span>
+                            <span class="font-mono">demo_user</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Password:</span>
+                            <span class="font-mono">demo123</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Login Form -->
-        <form class="mt-8 space-y-6 bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl" action="process_login.php"
-            method="POST">
-            <div class="space-y-4">
-                <div>
-                    <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Username or Email
-                    </label>
-                    <div class="relative">
-                        <input id="username" name="username" type="text" required
-                            class="relative block w-full px-4 py-3 pl-11 border border-gray-300 dark:border-gray-600 rounded-xl placeholder-gray-500 text-gray-900 dark:text-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
-                            placeholder="Enter your username or email">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-user text-gray-400"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Password
-                    </label>
-                    <div class="relative">
-                        <input id="password" name="password" type="password" required
-                            class="relative block w-full px-4 py-3 pl-11 border border-gray-300 dark:border-gray-600 rounded-xl placeholder-gray-500 text-gray-900 dark:text-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
-                            placeholder="Enter your password">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-lock text-gray-400"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <input id="remember_me" name="remember_me" type="checkbox"
-                        class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
-                    <label for="remember_me" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                        Remember me
-                    </label>
-                </div>
-
-                <div class="text-sm">
-                    <a href="#" class="font-medium text-primary-600 hover:text-primary-500 transition-colors">
-                        Forgot your password?
-                    </a>
-                </div>
-            </div>
-
-            <div>
-                <button type="submit"
-                    class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-primary-500 to-blue-600 hover:from-primary-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
-                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                        <i class="fas fa-sign-in-alt text-primary-300 group-hover:text-primary-200"></i>
-                    </span>
-                    Sign in to your account
-                </button>
-            </div>
-
-            <div class="text-center">
-                <span class="text-sm text-gray-600 dark:text-gray-400">
-                    Don't have an account?
-                    <a href="register.php"
-                        class="font-medium text-primary-600 hover:text-primary-500 transition-colors">
-                        Sign up here
-                    </a>
-                </span>
-            </div>
-        </form>
-
-        <!-- Demo Credentials -->
-        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-            <h4 class="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
-                <i class="fas fa-info-circle mr-1"></i>Demo Credentials
-            </h4>
-            <div class="text-xs text-blue-700 dark:text-blue-400 space-y-1">
-                <div><strong>Username:</strong> demo_user</div>
-                <div><strong>Password:</strong> demo123</div>
-            </div>
+        <!-- Footer -->
+        <div class="text-center mt-8">
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+                &copy; 2024 Universiti Utara Malaysia - Lost & Found Portal.
+                <a href="#" class="text-uum-green hover:text-uum-blue transition-colors">Privacy Policy</a> •
+                <a href="#" class="text-uum-green hover:text-uum-blue transition-colors">Terms of Service</a>
+            </p>
         </div>
     </div>
 
     <script src="../js/theme.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Password visibility toggle
+            const togglePassword = document.getElementById('toggle-password');
+            const passwordInput = document.getElementById('password');
+
+            if (togglePassword && passwordInput) {
+                togglePassword.addEventListener('click', function () {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    this.innerHTML = type === 'password' ? '<i class="fas fa-eye text-gray-400 hover:text-uum-green transition-colors"></i>' : '<i class="fas fa-eye-slash text-gray-400 hover:text-uum-green transition-colors"></i>';
+                });
+            }
+
+            // Username validation indicator
+            const usernameInput = document.getElementById('username');
+            const usernameCheck = document.getElementById('username-check');
+
+            if (usernameInput && usernameCheck) {
+                usernameInput.addEventListener('input', function () {
+                    if (this.value.length > 2) {
+                        usernameCheck.classList.remove('opacity-0');
+                        usernameCheck.classList.add('opacity-100');
+                    } else {
+                        usernameCheck.classList.remove('opacity-100');
+                        usernameCheck.classList.add('opacity-0');
+                    }
+                });
+            }
+
+            // Form submission animation
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    const button = this.querySelector('button[type="submit"]');
+                    if (button) {
+                        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing in...';
+                        button.disabled = true;
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>

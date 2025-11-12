@@ -664,7 +664,7 @@
 
     <script src="js/theme.js"></script>
     <script src="js/mobile-menu.js"></script>
-    <script src="js/lost-items.js"></script>
+    <script src="js/lost-items_page/lost-items.js"></script>
 </body>
 
 </html>
