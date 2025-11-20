@@ -40,7 +40,9 @@
                             <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
                         </a>
 
-                        <?php if ($_SESSION['role'] === 'admin'): ?>
+                        <?php
+                        // Safely check for role with isset() to avoid undefined key error
+                        if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
                             <a href="admin/panel.php"
                                 class="text-gray-700 dark:text-gray-300 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">
                                 <i class="fas fa-cog mr-1"></i> Admin Panel

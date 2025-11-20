@@ -73,12 +73,6 @@
                             <p class="text-gray-600 dark:text-gray-400 text-sm lg:text-base">Lost & Found Portal</p>
                         </div>
                     </a>
-
-                    <div
-                        class="bg-uum-green/10 border border-uum-green/20 rounded-2xl p-4 inline-flex items-center space-x-2">
-                        <i class="fas fa-university text-uum-green text-lg"></i>
-                        <span class="text-uum-green font-medium text-sm">Universiti Utara Malaysia</span>
-                    </div>
                 </div>
 
                 <!-- Features -->
@@ -141,7 +135,31 @@
                 </div>
 
                 <!-- Login Form -->
-                <form class="space-y-6" action="process_login.php" method="POST">
+                <form class="space-y-6" action="../api/process_login.php" method="POST">
+                    <!-- Resend Verification -->
+                    <?php if (isset($_SESSION['resend_verification'])): ?>
+                        <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <i class="fas fa-envelope text-blue-600"></i>
+                                <h3 class="font-semibold text-blue-800">Resend Verification Email</h3>
+                            </div>
+                            <p class="text-sm text-blue-700 mb-3">
+                                Didn't receive the verification email? Enter your email below to receive a new one.
+                            </p>
+                            <form action="resend_verification.php" method="POST" class="flex space-x-2">
+                                <input type="email" name="email" required placeholder="Enter your email address"
+                                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-uum-green">
+                                <button type="submit"
+                                    class="bg-uum-green text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-uum-blue transition-colors">
+                                    Resend
+                                </button>
+                            </form>
+                        </div>
+                        <?php
+                        unset($_SESSION['resend_verification']);
+                    endif;
+                    ?>
+
                     <div class="space-y-4">
                         <!-- Username/Email Field -->
                         <div>
@@ -202,30 +220,6 @@
                         Sign in to your account
                     </button>
 
-                    <!-- Divider -->
-                    <div class="relative">
-                        <div class="absolute inset-0 flex items-center">
-                            <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
-                        </div>
-                        <div class="relative flex justify-center text-sm">
-                            <span class="px-2 bg-white dark:bg-gray-800 text-gray-500">Or continue with</span>
-                        </div>
-                    </div>
-
-                    <!-- Social Login -->
-                    <div class="grid grid-cols-2 gap-3">
-                        <button type="button"
-                            class="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
-                            <i class="fab fa-google text-red-500 mr-2"></i>
-                            Google
-                        </button>
-                        <button type="button"
-                            class="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
-                            <i class="fab fa-microsoft text-blue-500 mr-2"></i>
-                            Microsoft
-                        </button>
-                    </div>
-
                     <!-- Register Link -->
                     <div class="text-center">
                         <span class="text-sm text-gray-600 dark:text-gray-400">
@@ -237,81 +231,13 @@
                         </span>
                     </div>
                 </form>
-
-                <!-- Demo Credentials -->
-                <div class="mt-6 p-4 bg-uum-green/10 border border-uum-green/20 rounded-xl">
-                    <div class="flex items-center space-x-2 mb-2">
-                        <i class="fas fa-info-circle text-uum-green"></i>
-                        <h4 class="text-sm font-semibold text-uum-green">Demo Access</h4>
-                    </div>
-                    <div class="text-xs text-uum-green space-y-1">
-                        <div class="flex justify-between">
-                            <span>Username:</span>
-                            <span class="font-mono">demo_user</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Password:</span>
-                            <span class="font-mono">demo123</span>
-                        </div>
-                    </div>
-                </div>
             </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="text-center mt-8">
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-                &copy; 2024 Universiti Utara Malaysia - Lost & Found Portal.
-                <a href="#" class="text-uum-green hover:text-uum-blue transition-colors">Privacy Policy</a> •
-                <a href="#" class="text-uum-green hover:text-uum-blue transition-colors">Terms of Service</a>
-            </p>
         </div>
     </div>
 
     <script src="../js/theme.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Password visibility toggle
-            const togglePassword = document.getElementById('toggle-password');
-            const passwordInput = document.getElementById('password');
+    <script src="../js/login/login.js"></script>
 
-            if (togglePassword && passwordInput) {
-                togglePassword.addEventListener('click', function () {
-                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                    passwordInput.setAttribute('type', type);
-                    this.innerHTML = type === 'password' ? '<i class="fas fa-eye text-gray-400 hover:text-uum-green transition-colors"></i>' : '<i class="fas fa-eye-slash text-gray-400 hover:text-uum-green transition-colors"></i>';
-                });
-            }
-
-            // Username validation indicator
-            const usernameInput = document.getElementById('username');
-            const usernameCheck = document.getElementById('username-check');
-
-            if (usernameInput && usernameCheck) {
-                usernameInput.addEventListener('input', function () {
-                    if (this.value.length > 2) {
-                        usernameCheck.classList.remove('opacity-0');
-                        usernameCheck.classList.add('opacity-100');
-                    } else {
-                        usernameCheck.classList.remove('opacity-100');
-                        usernameCheck.classList.add('opacity-0');
-                    }
-                });
-            }
-
-            // Form submission animation
-            const form = document.querySelector('form');
-            if (form) {
-                form.addEventListener('submit', function (e) {
-                    const button = this.querySelector('button[type="submit"]');
-                    if (button) {
-                        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing in...';
-                        button.disabled = true;
-                    }
-                });
-            }
-        });
-    </script>
 </body>
 
 </html>

@@ -395,3 +395,261 @@ html {
 .dark .message-sent {
   background: linear-gradient(135deg, #006837, #008845);
 }
+
+/* Responsive Chat Styles */
+@media (max-width: 1023px) {
+  #conversations-sidebar {
+    width: 100%;
+  }
+
+  #chat-area {
+    width: 100%;
+  }
+
+  .conversation-item {
+    padding: 12px 16px;
+  }
+}
+
+/* Mobile-first responsive design */
+.conversation-item {
+  transition: all 0.2s ease;
+}
+
+#messages-container {
+  scroll-behavior: smooth;
+}
+
+/* Ensure proper scrolling on mobile */
+#messages-container {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile menu animations */
+#mobile-menu {
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Custom styles for enhanced chat UI */
+.chat-message.sent {
+  background: linear-gradient(135deg, #006837, #0056b3);
+  color: white;
+  border-radius: 18px 18px 4px 18px;
+}
+
+.chat-message.received {
+  background-color: #f1f5f9;
+  color: #334155;
+  border-radius: 18px 18px 18px 4px;
+}
+
+.dark .chat-message.received {
+  background-color: #374151;
+  color: #e5e7eb;
+}
+
+.conversation-item.active {
+  background-color: rgba(0, 104, 55, 0.1);
+  border-left: 3px solid #006837;
+}
+
+.dark .conversation-item.active {
+  background-color: rgba(0, 104, 55, 0.2);
+}
+
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.typing-dots {
+  display: flex;
+  margin-left: 8px;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #9ca3af;
+  margin: 0 2px;
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes typing {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.message-status {
+  font-size: 0.75rem;
+  margin-top: 2px;
+}
+
+.message-time {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.date-divider {
+  display: flex;
+  align-items: center;
+  margin: 16px 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.date-divider::before,
+.date-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: #e5e7eb;
+}
+
+.dark .date-divider::before,
+.dark .date-divider::after {
+  background-color: #4b5563;
+}
+
+.date-divider span {
+  padding: 0 12px;
+}
+
+/* Smooth scrolling for messages */
+.messages-container {
+  scroll-behavior: smooth;
+}
+
+/* Message reactions */
+.message-reactions {
+  display: flex;
+  margin-top: 4px;
+  gap: 4px;
+}
+
+.reaction {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .reaction {
+  background-color: rgba(55, 65, 81, 0.9);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile optimizations */
+@media (max-width: 1023px) {
+  .chat-container {
+    height: calc(100vh - 64px);
+  }
+}
+
+/* Chat input responsive */
+@media (max-width: 640px) {
+  .max-w-7xl {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  #message-input {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}
+
+@media (max-width: 1023px) {
+  .chat-container {
+    height: calc(100vh - 64px);
+  }
+
+  /* Fix for mobile chat area */
+  #chat-area {
+    display: flex !important;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* Make messages container scrollable */
+  #messages-container {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 20px;
+    height: calc(100% - 140px);
+  }
+
+  /* Ensure message input is always visible */
+  #chat-area > div:last-child {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 12px;
+  }
+
+  .dark #chat-area > div:last-child {
+    background: #1f2937;
+    border-top-color: #374151;
+  }
+
+  /* Custom scrollbar for mobile */
+  #messages-container::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  #messages-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  #messages-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+  }
+
+  .dark #messages-container::-webkit-scrollbar-thumb {
+    background: #4b5563;
+  }
+
+  /* Make conversations list scrollable on mobile */
+  #conversations-sidebar > div:last-child {
+    height: calc(100% - 120px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Keep existing styles for desktop */
+@media (min-width: 1024px) {
+  #messages-container {
+    height: calc(100% - 140px);
+    overflow-y: auto;
+  }
+
+  #conversations-sidebar > div:last-child {
+    height: calc(100% - 120px);
+    overflow-y: auto;
+  }
+}
