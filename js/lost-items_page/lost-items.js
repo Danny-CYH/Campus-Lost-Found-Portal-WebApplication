@@ -1,17 +1,29 @@
+// Lost Items Gallery Functionality
 document.addEventListener('DOMContentLoaded', function () {
-
-    // 1. SELECT ELEMENTS
+    // Elements
     const searchInput = document.getElementById('search-input');
     const clearSearch = document.getElementById('clear-search');
     const filterToggle = document.getElementById('filter-toggle');
     const mobileFilterPanel = document.getElementById('mobile-filter-panel');
+    const filterControls = document.getElementById('filter-controls');
+    const activeFilters = document.getElementById('active-filters');
+    const clearFilters = document.getElementById('clear-filters');
+    const resetFilters = document.getElementById('reset-filters');
+    const itemsGrid = document.getElementById('items-grid');
+    const loadingState = document.getElementById('loading-state');
+    const emptyState = document.getElementById('empty-state');
+    const resultsCount = document.getElementById('results-count');
+    const resultsDescription = document.getElementById('results-description');
+    const viewToggles = document.querySelectorAll('.view-toggle');
+    const paginationBtns = document.querySelectorAll('.pagination-btn');
 
+    // Filter elements
     const categoryFilter = document.getElementById('category-filter');
     const locationFilter = document.getElementById('location-filter');
     const dateFilter = document.getElementById('date-filter');
     const sortFilter = document.getElementById('sort-filter');
 
-    // Mobile Filters
+    // Mobile filter elements
     const mobileCategoryFilter = document.getElementById('mobile-category-filter');
     const mobileLocationFilter = document.getElementById('mobile-location-filter');
     const mobileDateFilter = document.getElementById('mobile-date-filter');
@@ -19,20 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const mobileApplyFilters = document.getElementById('mobile-apply-filters');
     const mobileClearFilters = document.getElementById('mobile-clear-filters');
 
-    const clearFilters = document.getElementById('clear-filters');
-    const resetFilters = document.getElementById('reset-filters');
-
-    const itemsGrid = document.getElementById('items-grid');
-    const loadingState = document.getElementById('loading-state');
-    const emptyState = document.getElementById('empty-state');
-    const resultsCount = document.getElementById('results-count');
-    const resultsDescription = document.getElementById('results-description');
-
-    const viewToggles = document.querySelectorAll('.view-toggle');
-    const paginationBtns = document.querySelectorAll('.pagination-btn');
-    const activeFilters = document.getElementById('active-filters');
-
-    // 2. STATE MANAGEMENT
+    // Current state
     let currentState = {
         search: '',
         category: '',
@@ -44,190 +43,261 @@ document.addEventListener('DOMContentLoaded', function () {
         itemsPerPage: 12
     };
 
-    // 3. INITIALIZE
+    // Initialize
     init();
 
     function init() {
+        // Event listeners
         setupEventListeners();
-        // Run filter immediately to show items
+        // Load initial items
         filterItems();
     }
 
-    // 4. MAIN FILTER FUNCTION
+    function setupEventListeners() {
+        // Search functionality
+        searchInput.addEventListener('input', debounce(function (e) {
+            currentState.search = e.target.value;
+            currentState.page = 1;
+            updateClearSearchButton();
+            filterItems();
+        }, 300));
+
+        clearSearch.addEventListener('click', function () {
+            searchInput.value = '';
+            currentState.search = '';
+            updateClearSearchButton();
+            filterItems();
+        });
+
+        // Filter functionality
+        categoryFilter.addEventListener('change', function (e) {
+            currentState.category = e.target.value;
+            currentState.page = 1;
+            filterItems();
+        });
+
+        locationFilter.addEventListener('change', function (e) {
+            currentState.location = e.target.value;
+            currentState.page = 1;
+            filterItems();
+        });
+
+        dateFilter.addEventListener('change', function (e) {
+            currentState.date = e.target.value;
+            currentState.page = 1;
+            filterItems();
+        });
+
+        sortFilter.addEventListener('change', function (e) {
+            currentState.sort = e.target.value;
+            filterItems();
+        });
+
+        // Mobile filter functionality
+        filterToggle.addEventListener('click', function () {
+            mobileFilterPanel.classList.toggle('hidden');
+        });
+
+        mobileApplyFilters.addEventListener('click', function () {
+            currentState.category = mobileCategoryFilter.value;
+            currentState.location = mobileLocationFilter.value;
+            currentState.date = mobileDateFilter.value;
+            currentState.sort = mobileSortFilter.value;
+            currentState.page = 1;
+            mobileFilterPanel.classList.add('hidden');
+            filterItems();
+        });
+
+        mobileClearFilters.addEventListener('click', function () {
+            mobileCategoryFilter.value = '';
+            mobileLocationFilter.value = '';
+            mobileDateFilter.value = '';
+            mobileSortFilter.value = 'newest';
+        });
+
+        // Clear filters
+        clearFilters.addEventListener('click', clearAllFilters);
+        resetFilters.addEventListener('click', clearAllFilters);
+
+        // View toggle
+        viewToggles.forEach(toggle => {
+            toggle.addEventListener('click', function () {
+                const view = this.getAttribute('data-view');
+                setView(view);
+            });
+        });
+
+        // Pagination
+        paginationBtns.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const page = this.getAttribute('data-page');
+                handlePagination(page);
+            });
+        });
+
+        // Items per page
+        document.getElementById('items-per-page').addEventListener('change', function (e) {
+            currentState.itemsPerPage = parseInt(e.target.value);
+            currentState.page = 1;
+            filterItems();
+        });
+    }
+
     function filterItems() {
         showLoading();
 
-        // Small delay to allow UI to show spinner
+        // Simulate API call delay
         setTimeout(() => {
-            // Get all items freshly from the DOM
-            const allItems = Array.from(document.querySelectorAll('.item-card'));
+            const items = document.querySelectorAll('.item-card');
+            let visibleItems = 0;
 
-            // A. FILTER
-            const matchingItems = allItems.filter(item => {
-                return matchesSearchCriteria(item) &&
-                    matchesCategoryCriteria(item) &&
-                    matchesLocationCriteria(item) &&
-                    matchesDateCriteria(item);
-            });
+            items.forEach(item => {
+                const matchesSearch = matchesSearchCriteria(item);
+                const matchesCategory = matchesCategoryCriteria(item);
+                const matchesLocation = matchesLocationCriteria(item);
+                const matchesDate = matchesDateCriteria(item);
 
-            // B. SORT
-            sortMatchingItems(matchingItems);
-
-            // C. PAGINATION LOGIC
-            const totalItems = matchingItems.length;
-            const totalPages = Math.ceil(totalItems / currentState.itemsPerPage) || 1;
-
-            // Fix page number bounds
-            if (currentState.page > totalPages) currentState.page = 1;
-            if (currentState.page < 1) currentState.page = 1;
-
-            const startIndex = (currentState.page - 1) * currentState.itemsPerPage;
-            const endIndex = startIndex + currentState.itemsPerPage;
-
-            // D. RENDER
-            // First hide ALL items
-            allItems.forEach(item => item.style.display = 'none');
-
-            // Show only the slice for current page
-            matchingItems.slice(startIndex, endIndex).forEach(item => {
-                item.style.display = 'block';
-                // Apply Grid/List styling
-                if (currentState.view === 'list') {
-                    item.classList.add('flex');
-                    item.classList.remove('flex-col');
+                if (matchesSearch && matchesCategory && matchesLocation && matchesDate) {
+                    item.style.display = 'block';
+                    visibleItems++;
                 } else {
-                    item.classList.remove('flex');
-                    item.classList.add('flex-col');
+                    item.style.display = 'none';
                 }
             });
 
-            // Re-append to grid to visually reorder them based on sort
-            if (itemsGrid) {
-                matchingItems.forEach(item => itemsGrid.appendChild(item));
-            }
-
-            // Update UI elements
-            updateResultsText(totalItems);
-            updateActiveFiltersUI();
-            updatePaginationUI(totalItems, totalPages);
-
-            // ✅ CRITICAL: Hide loading spinner
+            updateResults(visibleItems);
+            updateActiveFilters();
             hideLoading();
-
-        }, 300);
+        }, 500);
     }
 
-    // 5. HELPER: MATCHING FUNCTIONS
     function matchesSearchCriteria(item) {
         if (!currentState.search) return true;
 
-        const term = currentState.search.toLowerCase();
-        // Use optional chaining (?.) to prevent crashes if element missing
-        const title = item.querySelector('h3')?.textContent.toLowerCase() || '';
-        const desc = item.querySelector('p')?.textContent.toLowerCase() || '';
-        const loc = (item.getAttribute('data-location') || '').toLowerCase();
+        const searchTerm = currentState.search.toLowerCase();
+        const title = item.querySelector('h3').textContent.toLowerCase();
+        const description = item.querySelector('p').textContent.toLowerCase();
+        const location = item.querySelector('.fa-map-marker-alt').nextSibling.textContent.toLowerCase();
 
-        return title.includes(term) || desc.includes(term) || loc.includes(term);
+        return title.includes(searchTerm) ||
+            description.includes(searchTerm) ||
+            location.includes(searchTerm);
     }
 
     function matchesCategoryCriteria(item) {
         if (!currentState.category) return true;
-        const cat = (item.getAttribute('data-category') || '').toLowerCase();
-        return cat.includes(currentState.category.toLowerCase());
+        return item.getAttribute('data-category') === currentState.category;
     }
 
     function matchesLocationCriteria(item) {
         if (!currentState.location) return true;
-        const loc = (item.getAttribute('data-location') || '').toLowerCase();
-        return loc.includes(currentState.location.toLowerCase());
+        return item.getAttribute('data-location') === currentState.location;
     }
 
     function matchesDateCriteria(item) {
         if (!currentState.date) return true;
 
-        const dateStr = item.getAttribute('data-date');
-        if (!dateStr) return true; // Keep item if no date found
-
-        const itemDate = new Date(dateStr);
+        const itemDate = new Date(item.getAttribute('data-date'));
         const now = new Date();
 
-        // Reset times to compare dates properly
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const itemDateOnly = new Date(itemDate.getFullYear(), itemDate.getMonth(), itemDate.getDate());
-
-        if (currentState.date === 'today') {
-            return itemDateOnly.getTime() === today.getTime();
+        switch (currentState.date) {
+            case 'today':
+                return itemDate.toDateString() === now.toDateString();
+            case 'week':
+                const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                return itemDate >= weekAgo;
+            case 'month':
+                const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                return itemDate >= monthAgo;
+            default:
+                return true;
         }
-        else if (currentState.date === 'week') {
-            const weekAgo = new Date(today);
-            weekAgo.setDate(today.getDate() - 7);
-            return itemDate >= weekAgo;
-        }
-        else if (currentState.date === 'month') {
-            const monthAgo = new Date(today);
-            monthAgo.setMonth(today.getMonth() - 1);
-            return itemDate >= monthAgo;
-        }
-        return true;
     }
 
-    // 6. HELPER: SORT FUNCTION
-    function sortMatchingItems(items) {
-        items.sort((a, b) => {
-            const dateA = new Date(a.getAttribute('data-date') || 0);
-            const dateB = new Date(b.getAttribute('data-date') || 0);
+    function updateResults(visibleCount) {
+        resultsCount.textContent = visibleCount;
 
-            if (currentState.sort === 'oldest') {
-                return dateA - dateB;
-            } else {
-                // newest or recent
-                return dateB - dateA;
-            }
-        });
-    }
-
-    // 7. HELPER: UI UPDATES
-    function updateResultsText(count) {
-        if (resultsCount) resultsCount.textContent = count;
-
-        if (count === 0) {
-            if (emptyState) emptyState.classList.remove('hidden');
-            if (itemsGrid) itemsGrid.classList.add('hidden');
-            if (resultsDescription) resultsDescription.textContent = 'No items match your current filters';
+        if (visibleCount === 0) {
+            emptyState.classList.remove('hidden');
+            itemsGrid.classList.add('hidden');
+            resultsDescription.textContent = 'No items match your current filters';
         } else {
-            if (emptyState) emptyState.classList.add('hidden');
-            if (itemsGrid) itemsGrid.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            itemsGrid.classList.remove('hidden');
 
-            if (resultsDescription) {
-                let desc = `Showing ${count} lost items`;
-                if (currentState.search) desc += ` matching "${currentState.search}"`;
-                resultsDescription.textContent = desc;
+            let description = `Showing ${visibleCount} lost items`;
+            if (currentState.search) {
+                description += ` matching "${currentState.search}"`;
             }
+            if (currentState.category) {
+                description += ` in ${getCategoryLabel(currentState.category)}`;
+            }
+            if (currentState.location) {
+                description += ` at ${getLocationLabel(currentState.location)}`;
+            }
+            resultsDescription.textContent = description;
         }
+
+        updatePagination(visibleCount);
     }
 
-    function updateActiveFiltersUI() {
-        if (!activeFilters) return;
+    function updateActiveFilters() {
         activeFilters.innerHTML = '';
+
         const filters = [];
 
-        if (currentState.search) filters.push({ label: `Search: "${currentState.search}"`, type: 'search' });
-        if (currentState.category) filters.push({ label: `Category: ${currentState.category}`, type: 'category' });
-        if (currentState.location) filters.push({ label: `Location: ${currentState.location}`, type: 'location' });
-        if (currentState.date) filters.push({ label: `Date: ${currentState.date}`, type: 'date' });
+        if (currentState.search) {
+            filters.push({
+                type: 'search',
+                label: `Search: "${currentState.search}"`,
+                value: currentState.search
+            });
+        }
+
+        if (currentState.category) {
+            filters.push({
+                type: 'category',
+                label: `Category: ${getCategoryLabel(currentState.category)}`,
+                value: currentState.category
+            });
+        }
+
+        if (currentState.location) {
+            filters.push({
+                type: 'location',
+                label: `Location: ${getLocationLabel(currentState.location)}`,
+                value: currentState.location
+            });
+        }
+
+        if (currentState.date) {
+            filters.push({
+                type: 'date',
+                label: `Date: ${getDateLabel(currentState.date)}`,
+                value: currentState.date
+            });
+        }
 
         if (filters.length > 0) {
             activeFilters.classList.remove('hidden');
-            filters.forEach(f => {
-                const badge = document.createElement('div');
-                badge.className = 'flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm mr-2 mb-2';
-                badge.innerHTML = `<span>${f.label}</span><button class="ml-2 hover:text-red-500 remove-filter" data-type="${f.type}"><i class="fas fa-times"></i></button>`;
-                activeFilters.appendChild(badge);
+
+            filters.forEach(filter => {
+                const filterElement = document.createElement('div');
+                filterElement.className = 'flex items-center bg-uum-green/10 text-uum-green px-3 py-1 rounded-full text-sm';
+                filterElement.innerHTML = `
+                    <span>${filter.label}</span>
+                    <button class="ml-2 text-uum-green hover:text-uum-blue remove-filter" data-type="${filter.type}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                activeFilters.appendChild(filterElement);
             });
 
+            // Add event listeners to remove buttons
             document.querySelectorAll('.remove-filter').forEach(btn => {
                 btn.addEventListener('click', function () {
-                    removeSpecificFilter(this.getAttribute('data-type'));
+                    const type = this.getAttribute('data-type');
+                    removeFilter(type);
                 });
             });
         } else {
@@ -235,181 +305,179 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function updatePaginationUI(totalItems, totalPages) {
-        const startItem = totalItems === 0 ? 0 : (currentState.page - 1) * currentState.itemsPerPage + 1;
-        const endItem = Math.min(currentState.page * currentState.itemsPerPage, totalItems);
+    function removeFilter(type) {
+        switch (type) {
+            case 'search':
+                currentState.search = '';
+                searchInput.value = '';
+                updateClearSearchButton();
+                break;
+            case 'category':
+                currentState.category = '';
+                categoryFilter.value = '';
+                mobileCategoryFilter.value = '';
+                break;
+            case 'location':
+                currentState.location = '';
+                locationFilter.value = '';
+                mobileLocationFilter.value = '';
+                break;
+            case 'date':
+                currentState.date = '';
+                dateFilter.value = '';
+                mobileDateFilter.value = '';
+                break;
+        }
 
-        const startEl = document.getElementById('pagination-start');
-        const endEl = document.getElementById('pagination-end');
-        const totalEl = document.getElementById('pagination-total');
+        currentState.page = 1;
+        filterItems();
+    }
 
-        if (startEl) startEl.textContent = startItem;
-        if (endEl) endEl.textContent = endItem;
-        if (totalEl) totalEl.textContent = totalItems;
+    function clearAllFilters() {
+        currentState.search = '';
+        currentState.category = '';
+        currentState.location = '';
+        currentState.date = '';
+        currentState.page = 1;
 
-        paginationBtns.forEach(btn => {
-            const type = btn.getAttribute('data-page');
-            if (type === 'prev') {
-                btn.disabled = currentState.page <= 1;
-                btn.classList.toggle('opacity-50', currentState.page <= 1);
-            } else if (type === 'next') {
-                btn.disabled = currentState.page >= totalPages;
-                btn.classList.toggle('opacity-50', currentState.page >= totalPages);
+        searchInput.value = '';
+        categoryFilter.value = '';
+        locationFilter.value = '';
+        dateFilter.value = '';
+        sortFilter.value = 'newest';
+
+        mobileCategoryFilter.value = '';
+        mobileLocationFilter.value = '';
+        mobileDateFilter.value = '';
+        mobileSortFilter.value = 'newest';
+
+        updateClearSearchButton();
+        mobileFilterPanel.classList.add('hidden');
+        filterItems();
+    }
+
+    function setView(view) {
+        currentState.view = view;
+
+        viewToggles.forEach(toggle => {
+            if (toggle.getAttribute('data-view') === view) {
+                toggle.classList.add('active', 'bg-white', 'dark:bg-gray-600', 'shadow-sm', 'text-gray-700', 'dark:text-gray-300');
+                toggle.classList.remove('text-gray-500', 'dark:text-gray-400');
             } else {
-                // Number buttons (simplified logic: highlight if matches current page)
-                const pageNum = parseInt(type);
-                if (!isNaN(pageNum)) {
-                    if (pageNum === currentState.page) {
-                        btn.classList.add('bg-green-600', 'text-white');
-                        btn.classList.remove('bg-gray-100', 'text-gray-700');
-                    } else {
-                        btn.classList.remove('bg-green-600', 'text-white');
-                        btn.classList.add('bg-gray-100', 'text-gray-700');
-                    }
-                }
+                toggle.classList.remove('active', 'bg-white', 'dark:bg-gray-600', 'shadow-sm', 'text-gray-700', 'dark:text-gray-300');
+                toggle.classList.add('text-gray-500', 'dark:text-gray-400');
             }
         });
+
+        if (view === 'grid') {
+            itemsGrid.classList.remove('grid-cols-1');
+            itemsGrid.classList.add('grid-cols-1', 'sm:grid-cols-2', 'lg:grid-cols-3', 'xl:grid-cols-4');
+        } else {
+            itemsGrid.classList.remove('sm:grid-cols-2', 'lg:grid-cols-3', 'xl:grid-cols-4');
+            itemsGrid.classList.add('grid-cols-1');
+
+            // Add list view specific classes to items
+            document.querySelectorAll('.item-card').forEach(card => {
+                if (view === 'list') {
+                    card.classList.add('flex');
+                    card.classList.remove('flex-col');
+                } else {
+                    card.classList.remove('flex');
+                    card.classList.add('flex-col');
+                }
+            });
+        }
+    }
+
+    function handlePagination(page) {
+        if (page === 'prev') {
+            if (currentState.page > 1) {
+                currentState.page--;
+            }
+        } else if (page === 'next') {
+            currentState.page++;
+        } else {
+            currentState.page = parseInt(page);
+        }
+
+        filterItems();
+    }
+
+    function updatePagination(totalItems) {
+        const totalPages = Math.ceil(totalItems / currentState.itemsPerPage);
+        const startItem = (currentState.page - 1) * currentState.itemsPerPage + 1;
+        const endItem = Math.min(currentState.page * currentState.itemsPerPage, totalItems);
+
+        document.getElementById('pagination-start').textContent = startItem;
+        document.getElementById('pagination-end').textContent = endItem;
+        document.getElementById('pagination-total').textContent = totalItems;
+
+        // Update pagination buttons (simplified for this example)
+        // In a real implementation, you would generate pagination buttons dynamically
+    }
+
+    function updateClearSearchButton() {
+        if (currentState.search) {
+            clearSearch.classList.remove('hidden');
+        } else {
+            clearSearch.classList.add('hidden');
+        }
     }
 
     function showLoading() {
-        if (loadingState) loadingState.classList.remove('hidden');
-        if (itemsGrid) itemsGrid.classList.add('hidden');
-        if (emptyState) emptyState.classList.add('hidden');
+        loadingState.classList.remove('hidden');
+        itemsGrid.classList.add('hidden');
+        emptyState.classList.add('hidden');
     }
 
     function hideLoading() {
-        if (loadingState) loadingState.classList.add('hidden');
+        loadingState.classList.add('hidden');
     }
 
-    function removeSpecificFilter(type) {
-        if (type === 'search') { currentState.search = ''; if (searchInput) searchInput.value = ''; }
-        if (type === 'category') { currentState.category = ''; if (categoryFilter) categoryFilter.value = ''; }
-        if (type === 'location') { currentState.location = ''; if (locationFilter) locationFilter.value = ''; }
-        if (type === 'date') { currentState.date = ''; if (dateFilter) dateFilter.value = ''; }
-        filterItems();
+    function getCategoryLabel(category) {
+        const labels = {
+            'electronics': 'Electronics',
+            'books': 'Books & Notes',
+            'clothing': 'Clothing',
+            'accessories': 'Accessories',
+            'keys': 'Keys & IDs',
+            'bags': 'Bags & Wallets',
+            'other': 'Other'
+        };
+        return labels[category] || category;
     }
 
-    // 8. HELPERS FOR LABELS (Updated to use values directly)
-    function getCategoryLabel(val) { return val; }
-    function getLocationLabel(val) { return val; }
-    function getDateLabel(val) {
-        const map = { 'today': 'Today', 'week': 'This Week', 'month': 'This Month' };
-        return map[val] || val;
-    }
-    
-    // 8. SETUP EVENT LISTENERS
-    function setupEventListeners() {
-        // Search
-        if (searchInput) {
-            searchInput.addEventListener('input', debounce(function (e) {
-                currentState.search = e.target.value;
-                currentState.page = 1;
-                filterItems();
-            }, 300));
-        }
-
-        if (clearSearch) {
-            clearSearch.addEventListener('click', function () {
-                if (searchInput) searchInput.value = '';
-                currentState.search = '';
-                filterItems();
-            });
-        }
-
-        // Filters
-        if (categoryFilter) categoryFilter.addEventListener('change', (e) => { currentState.category = e.target.value; currentState.page = 1; filterItems(); });
-        if (locationFilter) locationFilter.addEventListener('change', (e) => { currentState.location = e.target.value; currentState.page = 1; filterItems(); });
-        if (dateFilter) dateFilter.addEventListener('change', (e) => { currentState.date = e.target.value; currentState.page = 1; filterItems(); });
-        if (sortFilter) sortFilter.addEventListener('change', (e) => { currentState.sort = e.target.value; filterItems(); });
-
-        // Mobile Filter Panel
-        if (filterToggle && mobileFilterPanel) {
-            filterToggle.addEventListener('click', () => mobileFilterPanel.classList.toggle('hidden'));
-        }
-
-        if (mobileApplyFilters) {
-            mobileApplyFilters.addEventListener('click', () => {
-                if (mobileCategoryFilter) currentState.category = mobileCategoryFilter.value;
-                if (mobileLocationFilter) currentState.location = mobileLocationFilter.value;
-                if (mobileDateFilter) currentState.date = mobileDateFilter.value;
-                if (mobileSortFilter) currentState.sort = mobileSortFilter.value;
-                currentState.page = 1;
-                mobileFilterPanel.classList.add('hidden');
-                filterItems();
-            });
-        }
-
-        if (mobileClearFilters) {
-            mobileClearFilters.addEventListener('click', () => {
-                if (mobileCategoryFilter) mobileCategoryFilter.value = '';
-                if (mobileLocationFilter) mobileLocationFilter.value = '';
-                if (mobileDateFilter) mobileDateFilter.value = '';
-                if (mobileSortFilter) mobileSortFilter.value = 'newest';
-            });
-        }
-
-        // Global Clear
-        if (clearFilters) clearFilters.addEventListener('click', clearAllState);
-        if (resetFilters) resetFilters.addEventListener('click', clearAllState);
-
-        // Pagination
-        paginationBtns.forEach(btn => {
-            btn.addEventListener('click', function () {
-                const page = this.getAttribute('data-page');
-                if (page === 'prev') {
-                    if (currentState.page > 1) currentState.page--;
-                } else if (page === 'next') {
-                    // Logic handled in filterItems validation, just increment
-                    currentState.page++;
-                } else {
-                    currentState.page = parseInt(page);
-                }
-                filterItems();
-            });
-        });
-
-        // Items Per Page
-        const perPageEl = document.getElementById('items-per-page');
-        if (perPageEl) {
-            perPageEl.addEventListener('change', function (e) {
-                currentState.itemsPerPage = parseInt(e.target.value);
-                currentState.page = 1;
-                filterItems();
-            });
-        }
-
-        // View Toggle
-        viewToggles.forEach(toggle => {
-            toggle.addEventListener('click', function () {
-                currentState.view = this.getAttribute('data-view');
-                // Update active button state
-                viewToggles.forEach(t => {
-                    t.classList.remove('active', 'bg-white', 'text-gray-700', 'shadow-sm');
-                    t.classList.add('text-gray-500');
-                });
-                this.classList.add('active', 'bg-white', 'text-gray-700', 'shadow-sm');
-                this.classList.remove('text-gray-500');
-                filterItems();
-            });
-        });
+    function getLocationLabel(location) {
+        const labels = {
+            'library': 'Main Library',
+            'edc': 'EDC Building',
+            'student-center': 'Student Center',
+            'cafeteria': 'Cafeteria',
+            'sports-complex': 'Sports Complex',
+            'residential': 'Residential Colleges'
+        };
+        return labels[location] || location;
     }
 
-    function clearAllState() {
-        currentState = { search: '', category: '', location: '', date: '', sort: 'newest', view: 'grid', page: 1, itemsPerPage: 12 };
-        if (searchInput) searchInput.value = '';
-        if (categoryFilter) categoryFilter.value = '';
-        if (locationFilter) locationFilter.value = '';
-        if (dateFilter) dateFilter.value = '';
-        if (sortFilter) sortFilter.value = 'newest';
-        if (mobileFilterPanel) mobileFilterPanel.classList.add('hidden');
-        filterItems();
+    function getDateLabel(date) {
+        const labels = {
+            'today': 'Today',
+            'week': 'This Week',
+            'month': 'This Month'
+        };
+        return labels[date] || date;
     }
 
+    // Utility function for debouncing
     function debounce(func, wait) {
         let timeout;
-        return function (...args) {
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
             clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), wait);
+            timeout = setTimeout(later, wait);
         };
     }
 });

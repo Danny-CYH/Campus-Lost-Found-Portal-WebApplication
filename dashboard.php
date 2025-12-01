@@ -46,7 +46,6 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <!-- Quick Stats -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-500">
@@ -55,12 +54,9 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Items</p>
                     <p class="text-2xl font-semibold text-gray-900 dark:text-white">
-                        <?php
-                        // Count items where is_returned is 0
-                        echo count(array_filter($user_items, function ($item) {
-                            return $item['is_returned'] == 0;
-                        }));
-                        ?>
+                        <?php echo count(array_filter($user_items, function ($item) {
+                            return $item['status'] != 'returned';
+                        })); ?>
                     </p>
                 </div>
             </div>
@@ -74,12 +70,9 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Returned Items</p>
                     <p class="text-2xl font-semibold text-gray-900 dark:text-white">
-                        <?php
-                        // Count items where is_returned is 1
-                        echo count(array_filter($user_items, function ($item) {
-                            return $item['is_returned'] == 1;
-                        }));
-                        ?>
+                        <?php echo count(array_filter($user_items, function ($item) {
+                            return $item['status'] == 'returned';
+                        })); ?>
                     </p>
                 </div>
             </div>
@@ -148,50 +141,31 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         </div>
                                     </div>
                                 </td>
-
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <?php
-                                    // 1. Check if the item is physically returned
-                                    if ($item['is_returned'] == 1) {
-                                        // It is returned! Let's see what it was originally (Lost or Found)
-                                        $original_status = ucfirst($item['status']); // "Lost" or "Found"
-
-                                        // Display: "Lost - Returned" or "Found - Returned"
-                                        $status_text = $original_status . " - Returned";
-
-                                        // Use Green for success
-                                        $badge_class = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-                                    } else {
-                                        // 2. It is NOT returned yet (Active)
-                                        $status_colors = [
-                                            'lost' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-                                            'found' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                                        ];
-                                        $badge_class = $status_colors[$item['status']];
-                                        $status_text = ucfirst($item['status']); // Just "Lost" or "Found"
-                                    }
+                                    $status_colors = [
+                                        'lost' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+                                        'found' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+                                        'returned' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                    ];
                                     ?>
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?php echo $badge_class; ?>">
-                                        <?php echo $status_text; ?>
+                                    <span
+                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?php echo $status_colors[$item['status']]; ?>">
+                                        <?php echo ucfirst($item['status']); ?>
                                     </span>
                                 </td>
-
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                     <?php echo date('M j, Y', strtotime($item['date_reported'])); ?>
                                 </td>
-
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <a href="view-item.php?id=<?php echo $item['id']; ?>"
                                         class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3 font-medium">
                                         <i class="fas fa-eye mr-1"></i> View
                                     </a>
-
-                                    <?php if ($item['is_returned'] == 0): ?>
+                                    <?php if ($item['status'] != 'returned'): ?>
                                         <a href="#"
-                                            onclick="markItemReturned(<?php echo $item['id']; ?>); return false;"
-                                            class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 font-medium">
-                                            <i class="fas fa-check-circle mr-1"></i> Mark Returned
-                                        </a>
+                                            class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 mark-returned"
+                                            data-id="<?php echo $item['id']; ?>">Mark Returned</a>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -397,12 +371,9 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <!-- Search and Filter Section -->
 <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-    <div class="flex justify-between items-end mb-4">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Search Lost & Found Items</h2>
-    </div>
+    <h2 class="text-xl font-semibold mb-4">Search Lost & Found Items</h2>
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-
         <div>
             <label for="search-term" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
             <input type="text" id="search-term" placeholder="Item name or description..."
@@ -434,75 +405,20 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <option value="">All Statuses</option>
                 <option value="lost">Lost</option>
                 <option value="found">Found</option>
-                <option value="returned">Returned</option>
             </select>
         </div>
 
         <div>
-            <label for="filter-location" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Location</label>
-            <select id="filter-location"
+            <label for="filter-date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
+            <input type="date" id="filter-date"
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                <option value="">All Locations</option>
-                <option value="DKG 1">DKG 1</option>
-                <option value="DKG 2">DKG 2</option>
-                <option value="DKG 3">DKG 3</option>
-                <option value="DKG 4">DKG 4</option>
-                <option value="DKG 5">DKG 5</option>
-                <option value="DKG 6">DKG 6</option>
-                <option value="DKG 7">DKG 7</option>
-                <option value="DKG 8">DKG 8</option>
-                <option value="Laluan A">Laluan A</option>
-                <option value="Laluan B">Laluan B</option>
-                <option value="Laluan C">Laluan C</option>
-                <option value="Laluan D">Laluan D</option>
-                <option value="Main Library">Main Library</option>
-                <option value="Masjid">Masjid</option>
-                <option value="Pusat Sukan">Pusat Sukan</option>
-                <option value="Varsity Mall">Varsity Mall</option>
-            </select>
-        </div>
-
-        <div>
-            <label for="filter-time" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Time</label>
-            <select id="filter-time"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                <option value="">Any Time</option>
-                <option value="today">Today</option>
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
-            </select>
-        </div>
-
-        <div>
-            <label for="filter-sort" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sort By</label>
-            <select id="filter-sort"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="occurred_desc">Date Occurred (Recent)</option>
-            </select>
         </div>
     </div>
 
-    <div class="flex justify-end space-x-3 border-t border-gray-200 dark:border-gray-700 pt-4">
-        <button id="reset-search-btn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md font-medium transition-colors">
-            <i class="fas fa-undo mr-1"></i> Reset
-        </button>
-        <button id="search-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors shadow-sm">
-            <i class="fas fa-search mr-1"></i> Search Items
-        </button>
-    </div>
-
-    <div id="search-results" class="space-y-4 mt-6">
+    <div id="search-results" class="space-y-4">
+        <!-- Search results will be populated here by JavaScript -->
     </div>
 </div>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script>
-    const mapItemsData = <?php echo json_encode($all_items); ?>;
-</script>
 
 <script src="js/map.js"></script>
 <script src="js/app.js"></script>

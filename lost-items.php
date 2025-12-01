@@ -1,41 +1,4 @@
-<?php
-require_once 'includes/config.php';
-require_once 'includes/functions.php'; // Optional, if you have helper functions
-
-// 1. Fetch Active Lost Items
-$stmt = $pdo->prepare("SELECT * FROM items WHERE status = 'lost' AND is_returned = 0 ORDER BY created_at DESC");
-$stmt->execute();
-$lost_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// 2. Calculate Stats for the Header
-$total_active = count($lost_items);
-
-// Count items from this week
-$week_sql = "SELECT COUNT(*) FROM items WHERE status = 'lost' AND is_returned = 0 AND created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)";
-$week_stmt = $pdo->prepare($week_sql);
-$week_stmt->execute();
-$this_week_count = $week_stmt->fetchColumn();
-
-// 3. Calculate "Found Rate" (Success Rate for Lost Items)
-// A. Count ALL items ever reported as lost (Active + Returned)
-$total_history_sql = "SELECT COUNT(*) FROM items WHERE status = 'lost'";
-$stmt = $pdo->prepare($total_history_sql);
-$stmt->execute();
-$total_lost_ever = $stmt->fetchColumn();
-
-// B. Count "Lost" items that are now "Returned"
-$returned_sql = "SELECT COUNT(*) FROM items WHERE status = 'lost' AND is_returned = 1";
-$stmt = $pdo->prepare($returned_sql);
-$stmt->execute();
-$total_resolved = $stmt->fetchColumn();
-
-// C. Calculate Percentage
-if ($total_lost_ever > 0) {
-    $found_rate = round(($total_resolved / $total_lost_ever) * 100);
-} else {
-    $found_rate = 0;
-}
-?>
+<?php include 'includes/config.php'; ?>
 
 <!DOCTYPE html>
 <html lang="en" class="<?php echo isset($_COOKIE['theme']) ? $_COOKIE['theme'] : 'light'; ?>">
@@ -262,17 +225,15 @@ if ($total_lost_ever > 0) {
                 <!-- Quick Stats -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 max-w-2xl mx-auto">
                     <div class="text-center">
-                        <div class="text-2xl md:text-3xl font-bold text-uum-green dark:text-uum-gold"><?php echo $total_active; ?></div>
+                        <div class="text-2xl md:text-3xl font-bold text-uum-green dark:text-uum-gold">142</div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">Active Items</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400"><?php echo $this_week_count; ?></div>
+                        <div class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400">89</div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">This Week</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">
-                            <?php echo $found_rate; ?>%
-                        </div>
+                        <div class="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">67%</div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">Found Rate</div>
                     </div>
                     <div class="text-center">
@@ -316,44 +277,32 @@ if ($total_lost_ever > 0) {
 
                 <!-- Filter Controls -->
                 <div id="filter-controls" class="hidden lg:flex flex-col lg:flex-row gap-3 w-full lg:w-auto">
-
+                    <!-- Category Filter -->
                     <select id="category-filter"
                         class="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-uum-green focus:border-uum-green transition-all duration-200">
                         <option value="">All Categories</option>
-                        <option value="Electronics">Electronics</option>
-                        <option value="Books & Notes">Books & Notes</option>
-                        <option value="Clothing">Clothing</option>
-                        <option value="Accessories">Accessories</option>
-                        <option value="Keys & IDs">Keys & IDs</option>
-                        <option value="Bags & Wallets">Bags & Wallets</option>
-                        <option value="Water Bottles">Water Bottles</option>
-                        <option value="Others">Others</option>
+                        <option value="electronics">Electronics</option>
+                        <option value="books">Books & Notes</option>
+                        <option value="clothing">Clothing</option>
+                        <option value="accessories">Accessories</option>
+                        <option value="keys">Keys & IDs</option>
+                        <option value="bags">Bags & Wallets</option>
+                        <option value="other">Other</option>
                     </select>
 
+                    <!-- Location Filter -->
                     <select id="location-filter"
                         class="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-uum-green focus:border-uum-green transition-all duration-200">
                         <option value="">All Locations</option>
-
-                        <option value="DKG 1">DKG 1</option>
-                        <option value="DKG 2">DKG 2</option>
-                        <option value="DKG 3">DKG 3</option>
-                        <option value="DKG 4">DKG 4</option>
-                        <option value="DKG 5">DKG 5</option>
-                        <option value="DKG 6">DKG 6</option>
-                        <option value="DKG 7">DKG 7</option>
-                        <option value="DKG 8">DKG 8</option>
-
-                        <option value="Laluan A">Laluan A</option>
-                        <option value="Laluan B">Laluan B</option>
-                        <option value="Laluan C">Laluan C</option>
-                        <option value="Laluan D">Laluan D</option>
-
-                        <option value="Main Library">Main Library</option>
-                        <option value="Masjid">Masjid</option>
-                        <option value="Pusat Sukan">Pusat Sukan</option>
-                        <option value="Varsity Mall">Varsity Mall</option>
+                        <option value="library">Main Library</option>
+                        <option value="edc">EDC Building</option>
+                        <option value="student-center">Student Center</option>
+                        <option value="cafeteria">Cafeteria</option>
+                        <option value="sports-complex">Sports Complex</option>
+                        <option value="residential">Residential Colleges</option>
                     </select>
 
+                    <!-- Date Filter -->
                     <select id="date-filter"
                         class="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-uum-green focus:border-uum-green transition-all duration-200">
                         <option value="">Any Time</option>
@@ -362,12 +311,15 @@ if ($total_lost_ever > 0) {
                         <option value="month">This Month</option>
                     </select>
 
+                    <!-- Sort Options -->
                     <select id="sort-filter"
                         class="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-uum-green focus:border-uum-green transition-all duration-200">
                         <option value="newest">Newest First</option>
                         <option value="oldest">Oldest First</option>
+                        <option value="recent">Recently Updated</option>
                     </select>
 
+                    <!-- Clear Filters -->
                     <button id="clear-filters"
                         class="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors duration-200">
                         Clear All
@@ -384,14 +336,13 @@ if ($total_lost_ever > 0) {
                         <select id="mobile-category-filter"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white">
                             <option value="">All Categories</option>
-                            <option value="Electronics">Electronics</option>
-                            <option value="Books & Notes">Books & Notes</option>
-                            <option value="Clothing">Clothing</option>
-                            <option value="Accessories">Accessories</option>
-                            <option value="Keys & IDs">Keys & IDs</option>
-                            <option value="Bags & Wallets">Bags & Wallets</option>
-                            <option value="Water Bottles">Water Bottles</option>
-                            <option value="Others">Others</option>
+                            <option value="electronics">Electronics</option>
+                            <option value="books">Books & Notes</option>
+                            <option value="clothing">Clothing</option>
+                            <option value="accessories">Accessories</option>
+                            <option value="keys">Keys & IDs</option>
+                            <option value="bags">Bags & Wallets</option>
+                            <option value="other">Other</option>
                         </select>
                     </div>
 
@@ -400,25 +351,12 @@ if ($total_lost_ever > 0) {
                         <select id="mobile-location-filter"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white">
                             <option value="">All Locations</option>
-
-                            <option value="DKG 1">DKG 1</option>
-                            <option value="DKG 2">DKG 2</option>
-                            <option value="DKG 3">DKG 3</option>
-                            <option value="DKG 4">DKG 4</option>
-                            <option value="DKG 5">DKG 5</option>
-                            <option value="DKG 6">DKG 6</option>
-                            <option value="DKG 7">DKG 7</option>
-                            <option value="DKG 8">DKG 8</option>
-
-                            <option value="Laluan A">Laluan A</option>
-                            <option value="Laluan B">Laluan B</option>
-                            <option value="Laluan C">Laluan C</option>
-                            <option value="Laluan D">Laluan D</option>
-
-                            <option value="Main Library">Main Library</option>
-                            <option value="Masjid">Masjid</option>
-                            <option value="Pusat Sukan">Pusat Sukan</option>
-                            <option value="Varsity Mall">Varsity Mall</option>
+                            <option value="library">Main Library</option>
+                            <option value="edc">EDC Building</option>
+                            <option value="student-center">Student Center</option>
+                            <option value="cafeteria">Cafeteria</option>
+                            <option value="sports-complex">Sports Complex</option>
+                            <option value="residential">Residential Colleges</option>
                         </select>
                     </div>
 
@@ -440,6 +378,7 @@ if ($total_lost_ever > 0) {
                                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white">
                                 <option value="newest">Newest First</option>
                                 <option value="oldest">Oldest First</option>
+                                <option value="recent">Recently Updated</option>
                             </select>
                         </div>
                     </div>
@@ -527,89 +466,76 @@ if ($total_lost_ever > 0) {
 
             <!-- Items Grid -->
             <div id="items-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Item cards will be dynamically loaded here -->
 
-                <?php if (count($lost_items) > 0): ?>
-                    <?php foreach ($lost_items as $item): ?>
-                        <div class="item-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
-                            data-category="<?php echo strtolower($item['category']); ?>"
-                            data-location="<?php echo strtolower($item['location_name']); ?>"
-                            data-date="<?php echo $item['created_at']; ?>">
-
-                            <div class="relative h-48 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800">
-                                <div class="absolute top-3 right-3 z-10">
-                                    <span class="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">Lost</span>
-                                </div>
-
-                                <div class="absolute bottom-3 left-3 z-10">
-                                    <?php
-                                    // Choose icon based on category (Simple logic)
-                                    $icon = match ($item['category']) {
-                                        'Electronics' => 'fa-laptop',
-                                        'Books & Notes' => 'fa-book',
-                                        'Clothing' => 'fa-tshirt',
-                                        'Keys & IDs' => 'fa-key',
-                                        default => 'fa-box-open'
-                                    };
-                                    ?>
-                                    <i class="fas <?php echo $icon; ?> text-3xl text-blue-600 dark:text-blue-400 drop-shadow-md"></i>
-                                </div>
-
-                                <?php if ($item['image_path']): ?>
-                                    <img src="<?php echo htmlspecialchars($item['image_path']); ?>"
-                                        alt="<?php echo htmlspecialchars($item['title']); ?>"
-                                        class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
-                                <?php endif; ?>
-
-                                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center">
-                                    <a href="view-item.php?id=<?php echo $item['id']; ?>"
-                                        class="view-item-btn opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 bg-white text-uum-green px-4 py-2 rounded-lg font-medium shadow-lg hover:bg-gray-50">
-                                        View Details
-                                    </a>
-                                </div>
-                            </div>
-
-                            <div class="p-4">
-                                <div class="flex items-start justify-between mb-2">
-                                    <h3 class="font-bold text-gray-900 dark:text-white text-lg truncate" title="<?php echo htmlspecialchars($item['title']); ?>">
-                                        <?php echo htmlspecialchars($item['title']); ?>
-                                    </h3>
-                                    <span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full whitespace-nowrap">
-                                        <?php echo htmlspecialchars($item['category']); ?>
-                                    </span>
-                                </div>
-
-                                <p class="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
-                                    <?php echo htmlspecialchars($item['description']); ?>
-                                </p>
-
-                                <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-map-marker-alt mr-1"></i>
-                                        <span class="truncate max-w-[100px]"><?php echo htmlspecialchars($item['location_name']); ?></span>
-                                    </div>
-                                    <div>
-                                        <?php
-                                        // Calculate generic "Time Ago"
-                                        $time = strtotime($item['created_at']);
-                                        $diff = time() - $time;
-                                        if ($diff < 3600) echo floor($diff / 60) . " mins ago";
-                                        else if ($diff < 86400) echo floor($diff / 3600) . " hours ago";
-                                        else echo floor($diff / 86400) . " days ago";
-                                        ?>
-                                    </div>
-                                </div>
-                            </div>
+                <!-- Sample Item 1 -->
+                <div class="item-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
+                    data-category="electronics" data-location="library" data-date="2024-01-15">
+                    <div
+                        class="relative h-48 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800">
+                        <div class="absolute top-3 right-3">
+                            <span class="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">Lost</span>
                         </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="col-span-full py-12 text-center">
-                        <div class="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-search text-3xl text-gray-400"></i>
+                        <div class="absolute bottom-3 left-3">
+                            <i class="fas fa-laptop text-3xl text-blue-600 dark:text-blue-400"></i>
                         </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No lost items found</h3>
-                        <p class="text-gray-600 dark:text-gray-400">There are currently no reported lost items.</p>
+                        <div
+                            class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center">
+                            <button
+                                class="view-item-btn opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 bg-white text-uum-green px-4 py-2 rounded-lg font-medium shadow-lg">
+                                View Details
+                            </button>
+                        </div>
                     </div>
-                <?php endif; ?>
+                    <div class="p-4">
+                        <div class="flex items-start justify-between mb-2">
+                            <h3 class="font-bold text-gray-900 dark:text-white text-lg truncate">MacBook Pro 14"</h3>
+                            <span
+                                class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full">Electronics</span>
+                        </div>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">Silver MacBook Pro with
+                            UUM stickers on the cover. Lost during study session.</p>
+                        <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                            <div class="flex items-center">
+                                <i class="fas fa-map-marker-alt mr-1"></i>
+                                <span class="truncate">Main Library</span>
+                            </div>
+                            <div>2 hours ago</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sample Item 2 -->
+                <div class="item-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
+                    data-category="books" data-location="edc" data-date="2024-01-14">
+                    <div
+                        class="relative h-48 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900 dark:to-green-800">
+                        <div class="absolute top-3 right-3">
+                            <span class="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">Lost</span>
+                        </div>
+                        <div class="absolute bottom-3 left-3">
+                            <i class="fas fa-book text-3xl text-green-600 dark:text-green-400"></i>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="flex items-start justify-between mb-2">
+                            <h3 class="font-bold text-gray-900 dark:text-white text-lg truncate">Calculus Textbook</h3>
+                            <span
+                                class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs px-2 py-1 rounded-full">Books</span>
+                        </div>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">Calculus: Early
+                            Transcendentals 3rd Edition with handwritten notes.</p>
+                        <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                            <div class="flex items-center">
+                                <i class="fas fa-map-marker-alt mr-1"></i>
+                                <span class="truncate">EDC Building</span>
+                            </div>
+                            <div>1 day ago</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- More sample items would continue here... -->
             </div>
 
             <!-- Pagination -->
