@@ -98,7 +98,7 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
             <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <h2 class="text-xl font-semibold">My Items</h2>
-               <a href="report-item.php"
+                <a href="report-item.php"
                     class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium inline-flex items-center transition-colors">
                     <i class="fas fa-plus mr-1"></i> Report Item
                 </a>
@@ -158,9 +158,10 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <?php echo date('M j, Y', strtotime($item['date_reported'])); ?>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <a href="#"
-                                        class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3 view-item"
-                                        data-id="<?php echo $item['id']; ?>">View</a>
+                                    <a href="view-item.php?id=<?php echo $item['id']; ?>"
+                                        class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3 font-medium">
+                                        <i class="fas fa-eye mr-1"></i> View
+                                    </a>
                                     <?php if ($item['status'] != 'returned'): ?>
                                         <a href="#"
                                             class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 mark-returned"
@@ -251,7 +252,7 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </main>
 
 <!-- Report Item Modal -->
- <!--
+<!--
 <div id="report-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800">
         <div class="mt-3">

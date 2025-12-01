@@ -6,6 +6,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const closeReportModalBtn = document.getElementById('close-report-modal');
     const cancelReportBtn = document.getElementById('cancel-report');
 
+    const menuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    if (menuButton && mobileMenu) {
+        menuButton.addEventListener('click', function () {
+            // Toggles the 'hidden' class on the mobile menu div
+            mobileMenu.classList.toggle('hidden');
+        });
+    }
+    
     if (openReportModalBtn) {
         openReportModalBtn.addEventListener('click', function () {
             reportModal.classList.remove('hidden');
