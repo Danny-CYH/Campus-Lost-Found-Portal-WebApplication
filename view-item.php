@@ -25,12 +25,31 @@ if (!$item) {
     die("Item not found.");
 }
 
-// 3. Determine Ownership (To show secret data)
+// 3. Determine Ownership
 $is_owner = ($current_user_id == $item['user_id']);
 $is_admin = (isset($_SESSION['role']) && $_SESSION['role'] === 'admin');
 $can_see_secret = ($is_owner || $is_admin);
 
 include 'includes/header.php';
+// ✅ SMART BACK BUTTON LOGIC
+// 1. Determine the logical parent page based on item status
+if ($item['status'] === 'found') {
+    $back_url = 'found-items.php';
+    $back_text = 'Back to Found Items';
+} elseif ($item['status'] === 'lost') {
+    $back_url = 'lost-items.php';
+    $back_text = 'Back to Lost Items';
+} else {
+    // For 'returned' items or unknown status
+    $back_url = 'dashboard.php';
+    $back_text = 'Back to Dashboard';
+}
+
+// 2. If the user came from the dashboard specifically, prefer sending them back there
+if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'dashboard.php') !== false) {
+    $back_url = 'dashboard.php';
+    $back_text = 'Back to Dashboard';
+}
 ?>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -38,8 +57,10 @@ include 'includes/header.php';
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
     <div class="mb-6">
-        <a href="dashboard.php" class="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-            <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+        <a href="<?php echo $back_url; ?>"
+            onclick="if(document.referrer) { history.back(); return false; }"
+            class="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i> <?php echo $back_text; ?>
         </a>
     </div>
 
@@ -63,15 +84,25 @@ include 'includes/header.php';
 
                     <div class="absolute top-4 right-4">
                         <?php
-                        $badge_color = match ($item['status']) {
-                            'lost' => 'bg-red-500',
-                            'found' => 'bg-green-500',
-                            'returned' => 'bg-blue-500',
-                            default => 'bg-gray-500'
-                        };
+                        $badge_color = '';
+                        $status_text = '';
+
+                        // 1. Check if returned first
+                        if ($item['is_returned'] == 1) {
+                            $badge_color = 'bg-green-600';
+                            $status_text = ucfirst($item['status']) . ' - Returned';
+                        } else {
+                            // 2. Active Status colors
+                            $badge_color = match ($item['status']) {
+                                'lost' => 'bg-red-500',
+                                'found' => 'bg-yellow-500 text-yellow-900', // darker text for yellow
+                                default => 'bg-gray-500'
+                            };
+                            $status_text = ucfirst($item['status']);
+                        }
                         ?>
                         <span class="<?php echo $badge_color; ?> text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg capitalize">
-                            <?php echo htmlspecialchars($item['status']); ?>
+                            <?php echo htmlspecialchars($status_text); ?>
                         </span>
                     </div>
                 </div>
@@ -141,11 +172,19 @@ include 'includes/header.php';
                     </div>
                 <?php endif; ?>
 
-                <?php if ($is_owner && $item['status'] != 'returned'): ?>
+                <?php if ($is_owner): ?>
                     <div class="mt-8 flex gap-3">
-                        <button class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg shadow-green-600/30">
-                            <i class="fas fa-check mr-2"></i> Mark as Returned
-                        </button>
+                        <?php if ($item['is_returned'] == 1): ?>
+                            <button disabled
+                                class="flex-1 bg-gray-400 cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl shadow-none opacity-70">
+                                <i class="fas fa-check-double mr-2"></i> Item Returned
+                            </button>
+                        <?php else: ?>
+                            <button onclick="markItemReturned(<?php echo $item['id']; ?>)"
+                                class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg shadow-green-600/30">
+                                <i class="fas fa-check mr-2"></i> Mark as Returned
+                            </button>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
 
