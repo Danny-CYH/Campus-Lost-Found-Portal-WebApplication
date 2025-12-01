@@ -98,10 +98,10 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
             <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <h2 class="text-xl font-semibold">My Items</h2>
-                <button id="open-report-modal"
-                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium">
+               <a href="report-item.php"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium inline-flex items-center transition-colors">
                     <i class="fas fa-plus mr-1"></i> Report Item
-                </button>
+                </a>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -251,6 +251,7 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </main>
 
 <!-- Report Item Modal -->
+ <!--
 <div id="report-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800">
         <div class="mt-3">
@@ -365,7 +366,7 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </form>
         </div>
     </div>
-</div>
+</div> -->
 
 <!-- Search and Filter Section -->
 <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow p-6">

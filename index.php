@@ -188,7 +188,7 @@
                     </p>
                     <div class="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start">
                         <?php if (isset($_SESSION['user_id'])): ?>
-                            <a href="dashboard.php"
+                            <a href="report-item.php"
                                 class="bg-gradient-to-r from-uum-green to-uum-blue hover:from-uum-blue hover:to-uum-green text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl text-center">
                                 <i class="fas fa-plus-circle mr-2"></i>Report Item
                             </a>

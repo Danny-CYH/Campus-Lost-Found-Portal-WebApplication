@@ -178,6 +178,11 @@
                                     class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                                     <i class="fas fa-box mr-3"></i>My Items
                                 </a>
+
+                                <a href="update-profile.php" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <i class="fas fa-user-cog mr-3"></i>Update Profile
+                                </a>
+
                                 <a href="auth/logout.php"
                                     class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-b-xl border-t border-gray-200 dark:border-gray-700">
                                     <i class="fas fa-sign-out-alt mr-3"></i>Logout
