@@ -33,42 +33,89 @@
                     </a>
                 </div>
 
-                <div class="flex items-center space-x-4">
-                    <?php if (isset($_SESSION['user_id'])): ?>
-                        <a href="dashboard.php"
-                            class="text-gray-700 dark:text-gray-300 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">
-                            <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
-                        </a>
+                <div class="flex items-center">
 
-                        <?php
-                        // Safely check for role with isset() to avoid undefined key error
-                        if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-                            <a href="admin/panel.php"
-                                class="text-gray-700 dark:text-gray-300 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">
-                                <i class="fas fa-cog mr-1"></i> Admin Panel
+                    <div class="hidden lg:flex lg:items-center lg:space-x-4" id="desktop-links">
+                        <?php if (isset($_SESSION['user_id'])): ?>
+
+                            <a href="index.php" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">
+                                <i class="fas fa-home mr-1"></i> Home
+                            </a>
+                            <a href="lost-items.php" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">
+                                <i class="fas fa-list-ul mr-1"></i> List Items
+                            </a>
+                            <a href="chat.php" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">
+                                <i class="fas fa-comment-alt mr-1"></i> Message
+                            </a>
+                            <a href="dashboard.php" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">
+                                <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
+                            </a>
+
+                            <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+                                <a href="admin/panel.php" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">
+                                    <i class="fas fa-cog mr-1"></i> Admin Panel
+                                </a>
+                            <?php endif; ?>
+
+                            <button id="theme-toggle" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 p-2 rounded-md">
+                                <i class="fas fa-moon" id="theme-icon"></i>
+                            </button>
+
+                            <a href="auth/logout.php" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">
+                                <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                            </a>
+                        <?php else: ?>
+                            <a href="auth/login.php" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">
+                                <i class="fas fa-sign-in-alt mr-1"></i> Login
+                            </a>
+                            <a href="auth/register.php" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium">
+                                <i class="fas fa-user-plus mr-1"></i> Register
                             </a>
                         <?php endif; ?>
+                    </div>
+                    <div class="flex lg:hidden">
+                        <button id="mobile-menu-button" type="button" class="text-gray-700 dark:text-gray-300 hover:text-blue-500 p-2 rounded-md focus:outline-none">
+                            <i class="fas fa-bars text-xl"></i> </button>
+                    </div>
 
-                        <button id="theme-toggle"
-                            class="text-gray-700 dark:text-gray-300 hover:text-blue-500 p-2 rounded-md">
-                            <i class="fas fa-moon" id="theme-icon"></i>
-                        </button>
+                </div>
+            </div>
+        </div>
 
-                        <a href="auth/logout.php"
-                            class="text-gray-700 dark:text-gray-300 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">
-                            <i class="fas fa-sign-out-alt mr-1"></i> Logout
-                        </a>
-                    <?php else: ?>
-                        <a href="auth/login.php"
-                            class="text-gray-700 dark:text-gray-300 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">
-                            <i class="fas fa-sign-in-alt mr-1"></i> Login
-                        </a>
-                        <a href="auth/register.php"
-                            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium">
-                            <i class="fas fa-user-plus mr-1"></i> Register
+        <div class="lg:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <?php if (isset($_SESSION['user_id'])): ?>
+
+                    <a href="index.php" class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium">
+                        <i class="fas fa-home mr-1"></i> Home
+                    </a>
+                    <a href="lost-items.php" class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium">
+                        <i class="fas fa-list-ul mr-1"></i> List Items
+                    </a>
+                    <a href="chat.php" class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium">
+                        <i class="fas fa-comment-alt mr-1"></i> Message
+                    </a>
+                    <a href="dashboard.php" class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium">
+                        <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
+                    </a>
+
+                    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+                        <a href="admin/panel.php" class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium">
+                            <i class="fas fa-cog mr-1"></i> Admin Panel
                         </a>
                     <?php endif; ?>
-                </div>
+
+                    <a href="auth/logout.php" class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium border-t border-gray-200 dark:border-gray-700 mt-2 pt-2">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </a>
+                <?php else: ?>
+                    <a href="auth/login.php" class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium">
+                        <i class="fas fa-sign-in-alt mr-1"></i> Login
+                    </a>
+                    <a href="auth/register.php" class="bg-blue-500 hover:bg-blue-600 text-white block px-3 py-2 rounded-md text-base font-medium">
+                        <i class="fas fa-user-plus mr-1"></i> Register
+                    </a>
+                <?php endif; ?>
             </div>
         </div>
     </nav>
