@@ -1,7 +1,7 @@
 <?php
 // view-item.php
 require_once 'includes/config.php';
-require_once 'includes/functions.php';
+include 'includes/header.php';
 
 // 1. Get the ID from the URL
 if (!isset($_GET['id']) || empty($_GET['id'])) {
@@ -30,7 +30,7 @@ $is_owner = ($current_user_id == $item['user_id']);
 $is_admin = (isset($_SESSION['role']) && $_SESSION['role'] === 'admin');
 $can_see_secret = ($is_owner || $is_admin);
 
-include 'includes/header.php';
+
 // ✅ SMART BACK BUTTON LOGIC
 // 1. Determine the logical parent page based on item status
 if ($item['status'] === 'found') {
@@ -57,20 +57,21 @@ if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'dashboa
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
     <div class="mb-6">
-        <a href="<?php echo $back_url; ?>"
-            onclick="if(document.referrer) { history.back(); return false; }"
+        <a href="<?php echo $back_url; ?>" onclick="if(document.referrer) { history.back(); return false; }"
             class="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
             <i class="fas fa-arrow-left mr-2"></i> <?php echo $back_text; ?>
         </a>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700">
+    <div
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700">
 
         <div class="grid grid-cols-1 lg:grid-cols-2">
 
             <div class="p-6 bg-gray-50 dark:bg-gray-900/50 border-r border-gray-100 dark:border-gray-700">
 
-                <div class="w-full h-80 bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden shadow-sm mb-6 relative group">
+                <div
+                    class="w-full h-80 bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden shadow-sm mb-6 relative group">
                     <?php if ($item['image_path']): ?>
                         <img src="<?php echo htmlspecialchars($item['image_path']); ?>"
                             alt="<?php echo htmlspecialchars($item['title']); ?>"
@@ -101,7 +102,8 @@ if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'dashboa
                             $status_text = ucfirst($item['status']);
                         }
                         ?>
-                        <span class="<?php echo $badge_color; ?> text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg capitalize">
+                        <span
+                            class="<?php echo $badge_color; ?> text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg capitalize">
                             <?php echo htmlspecialchars($status_text); ?>
                         </span>
                     </div>
@@ -161,7 +163,8 @@ if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'dashboa
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                             <i class="fas fa-lock text-yellow-500 mr-2"></i>Secret Identifier
                         </h3>
-                        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 p-4 rounded-lg">
+                        <div
+                            class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 p-4 rounded-lg">
                             <p class="text-gray-700 dark:text-gray-300 font-mono text-sm">
                                 <?php echo htmlspecialchars($item['secret_identifier']); ?>
                             </p>
@@ -188,16 +191,58 @@ if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'dashboa
                     </div>
                 <?php endif; ?>
 
+                <!-- Add this in view-item.php after the owner action buttons or before closing the main container -->
+
+                <?php if (!$is_owner && isset($_SESSION['user_id'])): ?>
+                    <?php
+                    // Check if a conversation already exists with this item owner
+                    $chat_stmt = $pdo->prepare("
+        SELECT c.id 
+        FROM conversations c 
+        WHERE (c.user1_id = ? AND c.user2_id = ?) 
+           OR (c.user1_id = ? AND c.user2_id = ?)
+        LIMIT 1
+    ");
+                    $chat_stmt->execute([$_SESSION['user_id'], $item['user_id'], $item['user_id'], $_SESSION['user_id']]);
+                    $existing_conversation = $chat_stmt->fetch(PDO::FETCH_ASSOC);
+                    ?>
+
+                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <a href="messages.php?start_conversation=<?php echo $item['user_id']; ?>&item_id=<?php echo $item_id; ?><?php echo isset($existing_conversation['id']) ? '&conversation_id=' . $existing_conversation['id'] : ''; ?>"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg shadow-blue-600/30 flex items-center justify-center">
+                            <i class="fas fa-comments mr-3"></i>
+                            <?php echo isset($existing_conversation['id']) ? 'Continue Chat with ' : 'Message '; ?>
+                            <?php echo htmlspecialchars($item['username']); ?>
+                        </a>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
+                            Chat about this item: "<?php echo htmlspecialchars($item['title']); ?>"
+                        </p>
+                    </div>
+                <?php elseif (!isset($_SESSION['user_id'])): ?>
+                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <a href="login.php"
+                            class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg flex items-center justify-center">
+                            <i class="fas fa-sign-in-alt mr-3"></i> Login to Message the Owner
+                        </a>
+                    </div>
+                <?php endif; ?>
+
             </div>
         </div>
     </div>
 </div>
 
+<!-- Footer sections -->
+<?php include 'includes/footer.php'; ?>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/app.js"></script>
+
 <script>
     // Initialize Map if coordinates exist
     <?php if ($item['latitude'] && $item['longitude']): ?>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             var map = L.map('view-map').setView([<?php echo $item['latitude']; ?>, <?php echo $item['longitude']; ?>], 16);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -211,8 +256,6 @@ if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'dashboa
     <?php endif; ?>
 </script>
 
-<script src="js/theme.js"></script>
-<script src="js/app.js"></script>
 </body>
 
 </html>

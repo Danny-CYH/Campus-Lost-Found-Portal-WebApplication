@@ -1,0 +1,106 @@
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+.chat-container {
+  height: calc(100vh - 8rem);
+}
+
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin: 0 8px 4px;
+  color: #4b5563; /* gray-600 */
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-item:hover {
+  background-color: #f3f4f6; /* gray-100 */
+  color: #006837; /* uum-green */
+}
+
+.dark .mobile-menu-item {
+  color: #9ca3af; /* gray-400 */
+}
+
+.dark .mobile-menu-item:hover {
+  background-color: #374151; /* gray-700 */
+  color: #ffd700; /* uum-gold */
+}
+
+.mobile-menu-item-active {
+  background-color: rgba(0, 104, 55, 0.1); /* uum-green with opacity */
+  color: #006837; /* uum-green */
+  font-weight: 600;
+}
+
+.dark .mobile-menu-item-active {
+  background-color: rgba(0, 104, 55, 0.2); /* uum-green with opacity */
+  color: #ffd700; /* uum-gold */
+}
+
+.mobile-menu-item i {
+  width: 24px;
+  margin-right: 12px;
+  text-align: center;
+}
+
+/* Active indicator dot */
+.mobile-menu-item .animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Mobile menu overlay */
+#mobile-menu-overlay {
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* Ensure mobile menu is above everything */
+#mobile-menu {
+  z-index: 9999;
+}
+
+#mobile-menu-overlay {
+  z-index: 9998;
+}
+
+/* Scrollbar styling for mobile menu */
+#mobile-menu .flex-1 {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+.dark #mobile-menu .flex-1 {
+  scrollbar-color: #4b5563 transparent;
+}
+
+#mobile-menu .flex-1::-webkit-scrollbar {
+  width: 6px;
+}
+
+#mobile-menu .flex-1::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#mobile-menu .flex-1::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 3px;
+}
+
+.dark #mobile-menu .flex-1::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+}

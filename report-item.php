@@ -1,6 +1,7 @@
 <?php
 // 1. DATABASE CONNECTION
 include 'includes/config.php';
+include 'includes/header.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -37,8 +38,8 @@ $locations_data = [
     "DKG 4" => ["lat" => 6.467700622959108, "lng" => 100.50795079373322],
     "DKG 5" => ["lat" => 6.4586947069409035, "lng" => 100.50587896329803],
     "DKG 6" => ["lat" => 6.45559717337014, "lng" => 100.50464284022831],
-    "DKG 7" => ["lat" => 6.4538447845452, "lng" =>  100.4995698090767],
-    "DKG 8" => ["lat" => 6.455723956980103, "lng" =>  100.4986244207178],
+    "DKG 7" => ["lat" => 6.4538447845452, "lng" => 100.4995698090767],
+    "DKG 8" => ["lat" => 6.455723956980103, "lng" => 100.4986244207178],
     "Laluan A" => ["lat" => 6.458164107181955, "lng" => 100.50156375376041],
     "Laluan B" => ["lat" => 6.462486396849043, "lng" => 100.50405586680641],
     "Laluan C" => ["lat" => 6.480566556610062, "lng" => 100.50843323185404],
@@ -196,90 +197,37 @@ if (isset($_POST['report_item_btn'])) {
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-
-    <!-- NAVIGATION BAR -->
-    <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg sticky top-0 z-30">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <!-- Logo -->
-                <div class="flex items-center">
-                    <a href="index.php" class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gradient-to-r from-uum-green to-uum-blue rounded-xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-search-location text-white text-lg"></i>
-                        </div>
-                        <div>
-                            <span class="text-xl font-bold text-uum-green dark:text-uum-gold">UUM Find</span>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 -mt-1">Lost & Found Portal</p>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Desktop Menu -->
-                <div class="hidden md:flex items-center space-x-6">
-                    <a href="index.php" class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Home</a>
-                    <a href="lost-items.php" class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Lost Items</a>
-                    <a href="found-items.php" class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Found Items</a>
-                </div>
-
-                <!-- User Menu -->
-                <div class="flex items-center space-x-4">
-                    <button id="theme-toggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300">
-                        <i class="fas fa-moon text-gray-600 dark:text-uum-gold text-lg" id="theme-icon"></i>
-                    </button>
-
-                    <div class="relative group">
-                        <button class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                            <div class="w-8 h-8 bg-uum-green rounded-full flex items-center justify-center text-white font-semibold">
-                                <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
-                            </div>
-                            <span class="text-gray-700 dark:text-gray-300 hidden lg:block"><?php echo htmlspecialchars($_SESSION['username']); ?></span>
-                            <i class="fas fa-chevron-down text-gray-500 text-xs"></i>
-                        </button>
-                        <!-- Dropdown Menu -->
-                        <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                            <a href="dashboard.php" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-t-xl">
-                                <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
-                            </a>
-                            <a href="my-items.php" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <i class="fas fa-box mr-3"></i>My Items
-                            </a>
-                            <a href="update-profile.php" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <i class="fas fa-user-cog mr-3"></i>Update Profile
-                            </a>
-                            <a href="auth/logout.php" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-b-xl border-t border-gray-200 dark:border-gray-700">
-                                <i class="fas fa-sign-out-alt mr-3"></i>Logout
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
-
     <!-- FORM SECTION -->
     <section class="py-10">
         <div class="max-w-3xl mx-auto px-4">
 
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Report an Item</h1>
-                <p class="text-gray-600 dark:text-gray-400">Did you lose something or find something? Fill out the details below.</p>
+                <p class="text-gray-600 dark:text-gray-400">Did you lose something or find something? Fill out the
+                    details below.</p>
             </div>
 
             <?php if ($msg != ""): ?>
-                <div class="mb-6 p-4 rounded-xl flex items-center <?php echo $msg_type == 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'; ?>">
-                    <i class="fas <?php echo $msg_type == 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?> mr-3 text-xl"></i>
+                <div
+                    class="mb-6 p-4 rounded-xl flex items-center <?php echo $msg_type == 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'; ?>">
+                    <i
+                        class="fas <?php echo $msg_type == 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?> mr-3 text-xl"></i>
                     <span><?php echo $msg; ?></span>
                 </div>
             <?php endif; ?>
 
-            <form id="reportForm" action="" method="POST" enctype="multipart/form-data" class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700" novalidate>
+            <form id="reportForm" action="" method="POST" enctype="multipart/form-data"
+                class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700"
+                novalidate>
 
                 <div class="mb-6">
-                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">I am reporting a...</label>
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">I am reporting
+                        a...</label>
                     <div class="grid grid-cols-2 gap-4">
                         <label class="cursor-pointer">
                             <input type="radio" name="status" value="Lost" class="peer sr-only" required>
-                            <div class="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-600 peer-checked:border-red-500 peer-checked:bg-red-50 dark:peer-checked:bg-red-900/20 text-center transition-all hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <div
+                                class="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-600 peer-checked:border-red-500 peer-checked:bg-red-50 dark:peer-checked:bg-red-900/20 text-center transition-all hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <i class="fas fa-search text-2xl mb-2 text-red-500"></i>
                                 <div class="font-bold text-gray-700 dark:text-gray-200">Lost Item</div>
                                 <div class="text-xs text-gray-500">I lost something</div>
@@ -287,7 +235,8 @@ if (isset($_POST['report_item_btn'])) {
                         </label>
                         <label class="cursor-pointer">
                             <input type="radio" name="status" value="Found" class="peer sr-only">
-                            <div class="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-600 peer-checked:border-green-500 peer-checked:bg-green-50 dark:peer-checked:bg-green-900/20 text-center transition-all hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <div
+                                class="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-600 peer-checked:border-green-500 peer-checked:bg-green-50 dark:peer-checked:bg-green-900/20 text-center transition-all hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <i class="fas fa-hand-holding-heart text-2xl mb-2 text-green-500"></i>
                                 <div class="font-bold text-gray-700 dark:text-gray-200">Found Item</div>
                                 <div class="text-xs text-gray-500">I found something</div>
@@ -299,13 +248,15 @@ if (isset($_POST['report_item_btn'])) {
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Item Name (Title)</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Item Name
+                            (Title)</label>
                         <input type="text" name="title" placeholder="e.g. Blue Wallet" required
                             class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-uum-green">
                         <p id="error-title" class="text-red-500 text-xs mt-1 font-semibold hidden"></p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Occurred</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date
+                            Occurred</label>
                         <input type="date" name="date_occurred" required max="<?php echo date('Y-m-d'); ?>"
                             class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-uum-green">
                         <p id="error-date" class="text-red-500 text-xs mt-1 font-semibold hidden"></p>
@@ -315,23 +266,27 @@ if (isset($_POST['report_item_btn'])) {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
-                        <select name="category" required class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-uum-green">
+                        <select name="category" required
+                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-uum-green">
                             <option value="">Select Category</option>
                             <?php foreach ($categories_list as $cat): ?>
-                                <option value="<?php echo htmlspecialchars($cat); ?>"><?php echo htmlspecialchars($cat); ?></option>
+                                <option value="<?php echo htmlspecialchars($cat); ?>"><?php echo htmlspecialchars($cat); ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                         <p id="error-category" class="text-red-500 text-xs mt-1 font-semibold hidden"></p>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Location Name</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Location
+                            Name</label>
 
                         <select name="location_name" id="location_input" required
                             class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-uum-green">
                             <option value="">Select Location</option>
                             <?php foreach ($locations_data as $name => $coords): ?>
-                                <option value="<?php echo htmlspecialchars($name); ?>"><?php echo htmlspecialchars($name); ?></option>
+                                <option value="<?php echo htmlspecialchars($name); ?>">
+                                    <?php echo htmlspecialchars($name); ?></option>
                             <?php endforeach; ?>
                         </select>
                         <p id="error-location" class="text-red-500 text-xs mt-1 font-semibold hidden"></p>
@@ -344,7 +299,8 @@ if (isset($_POST['report_item_btn'])) {
                 </div>
 
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pin Exact Location (Map)</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pin Exact Location
+                        (Map)</label>
                     <div id="map"></div>
                     <p class="text-xs text-gray-500 mt-2">Drag the marker to pinpoint the exact spot.</p>
 
@@ -356,12 +312,15 @@ if (isset($_POST['report_item_btn'])) {
 
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
-                    <textarea name="description" rows="4" placeholder="Describe the item (color, brand, specific marks)..." required
+                    <textarea name="description" rows="4"
+                        placeholder="Describe the item (color, brand, specific marks)..." required
                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-uum-green mb-1"></textarea>
                     <p id="error-description" class="text-red-500 text-xs mb-4 font-semibold hidden"></p>
 
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Secret Identifier</label>
-                    <input type="text" name="secret_identifier" placeholder="e.g. Serial number, scratch on back, name inside cover" required
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Secret
+                        Identifier</label>
+                    <input type="text" name="secret_identifier"
+                        placeholder="e.g. Serial number, scratch on back, name inside cover" required
                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-uum-green">
                     <p id="error-secret" class="text-red-500 text-xs mt-1 font-semibold hidden"></p>
                     <p class="text-xs text-gray-500 mt-1">This helps prove ownership if multiple people claim it.</p>
@@ -369,7 +328,8 @@ if (isset($_POST['report_item_btn'])) {
 
                 <div class="mb-8">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Upload Photo</label>
-                    <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 text-center hover:border-uum-green transition-colors">
+                    <div
+                        class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 text-center hover:border-uum-green transition-colors">
                         <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
                         <input type="file" name="item_image" accept="image/*" class="block w-full text-sm text-gray-500
             file:mr-4 file:py-2 file:px-4
@@ -386,7 +346,8 @@ if (isset($_POST['report_item_btn'])) {
                 <!-- SUBMIT BUTTON -->
                 <input type="hidden" name="report_item_btn" value="1">
 
-                <button type="submit" class="w-full bg-uum-green hover:bg-uum-blue text-white font-bold py-4 rounded-xl shadow-lg transform transition-all hover:scale-[1.02]">
+                <button type="submit"
+                    class="w-full bg-uum-green hover:bg-uum-blue text-white font-bold py-4 rounded-xl shadow-lg transform transition-all hover:scale-[1.02]">
                     Submit Report
                 </button>
 
@@ -394,12 +355,8 @@ if (isset($_POST['report_item_btn'])) {
         </div>
     </section>
 
-    <!-- FOOTER -->
-    <footer class="bg-gray-800 text-white py-8 md:py-12 mt-8">
-        <div class="max-w-7xl mx-auto px-4 text-center text-gray-400 text-sm">
-            <p>&copy; 2025 Universiti Utara Malaysia - Lost & Found Portal. All rights reserved.</p>
-        </div>
-    </footer>
+    <!-- FOOTER section -->
+    <?php include 'includes/footer.php'; ?>
 
     <!-- SCRIPTS -->
     <script src="js/theme.js"></script>

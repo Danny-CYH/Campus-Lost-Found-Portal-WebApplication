@@ -1,6 +1,6 @@
 <?php
 require_once 'includes/config.php';
-require_once 'includes/functions.php'; // Optional, if you have helper functions
+require_once 'includes/header.php';
 
 // 1. Fetch Active Lost Items
 $stmt = $pdo->prepare("SELECT * FROM items WHERE status = 'lost' AND is_returned = 0 ORDER BY created_at DESC");
@@ -79,170 +79,6 @@ if ($total_lost_ever > 0) {
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-    <!-- Mobile Menu Button -->
-    <div class="md:hidden fixed top-4 right-4 z-50">
-        <button id="mobile-menu-button"
-            class="p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg">
-            <i class="fas fa-bars text-gray-700 dark:text-gray-300"></i>
-        </button>
-    </div>
-
-    <!-- Mobile Menu -->
-    <div id="mobile-menu"
-        class="fixed inset-0 bg-white dark:bg-gray-800 z-40 transform translate-x-full transition-transform duration-300 md:hidden">
-        <div class="flex flex-col h-full p-6">
-            <div class="flex justify-between items-center mb-8">
-                <a href="index.php" class="flex items-center space-x-3">
-                    <div
-                        class="w-10 h-10 bg-gradient-to-r from-uum-green to-uum-blue rounded-xl flex items-center justify-center shadow-lg">
-                        <i class="fas fa-search-location text-white text-lg"></i>
-                    </div>
-                    <div>
-                        <span class="text-xl font-bold text-uum-green dark:text-uum-gold">
-                            UUM Find
-                        </span>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 -mt-1">Lost & Found</p>
-                    </div>
-                </a>
-                <button id="close-mobile-menu" class="p-2">
-                    <i class="fas fa-times text-gray-600 dark:text-gray-400 text-xl"></i>
-                </button>
-            </div>
-
-            <nav class="flex-1 space-y-6">
-                <a href="index.php"
-                    class="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-uum-green transition-colors py-3 border-b border-gray-200 dark:border-gray-700">
-                    <i class="fas fa-home mr-3"></i>Home
-                </a>
-                <a href="lost-items.php"
-                    class="block text-lg font-medium text-uum-green dark:text-uum-gold py-3 border-b border-gray-200 dark:border-gray-700">
-                    <i class="fas fa-search mr-3"></i>Lost Items
-                </a>
-                <a href="found-items.php"
-                    class="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-uum-green transition-colors py-3 border-b border-gray-200 dark:border-gray-700">
-                    <i class="fas fa-hand-holding-heart mr-3"></i>Found Items
-                </a>
-                <a href="dashboard.php"
-                    class="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-uum-green transition-colors py-3 border-b border-gray-200 dark:border-gray-700">
-                    <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
-                </a>
-            </nav>
-
-            <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
-                <?php if (isset($_SESSION['user_id'])): ?>
-                    <a href="report-item.php"
-                        class="block w-full bg-uum-green hover:bg-uum-blue text-white text-center py-3 rounded-xl font-medium transition-colors mb-3">
-                        <i class="fas fa-plus-circle mr-2"></i>Report Item
-                    </a>
-                    <a href="auth/logout.php"
-                        class="block w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-center py-3 rounded-xl font-medium transition-colors">
-                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
-                    </a>
-                <?php else: ?>
-                    <a href="auth/login.php"
-                        class="block w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-center py-3 rounded-xl font-medium transition-colors mb-3">
-                        <i class="fas fa-sign-in-alt mr-2"></i>Login
-                    </a>
-                    <a href="auth/register.php"
-                        class="block w-full bg-uum-green hover:bg-uum-blue text-white text-center py-3 rounded-xl font-medium transition-colors">
-                        <i class="fas fa-user-plus mr-2"></i>Register
-                    </a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-
-    <!-- Navigation -->
-    <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg sticky top-0 z-30">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="index.php" class="flex items-center space-x-3">
-                        <div
-                            class="w-10 h-10 bg-gradient-to-r from-uum-green to-uum-blue rounded-xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-search-location text-white text-lg"></i>
-                        </div>
-                        <div>
-                            <span class="text-xl font-bold text-uum-green dark:text-uum-gold">
-                                UUM Find
-                            </span>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 -mt-1">Lost & Found Portal</p>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="hidden md:flex items-center space-x-6">
-                    <a href="index.php"
-                        class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Home</a>
-                    <a href="lost-items.php"
-                        class="text-uum-green dark:text-uum-gold font-medium border-b-2 border-uum-green">Lost Items</a>
-                    <a href="found-items.php"
-                        class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Found
-                        Items</a>
-                    <a href="dashboard.php"
-                        class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Dashboard</a>
-                </div>
-
-                <div class="flex items-center space-x-4">
-                    <button id="theme-toggle"
-                        class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 transform hover:scale-110">
-                        <i class="fas fa-moon text-gray-600 dark:text-uum-gold text-lg" id="theme-icon"></i>
-                    </button>
-
-                    <?php if (isset($_SESSION['user_id'])): ?>
-                        <a href="report-item.php"
-                            class="bg-uum-green hover:bg-uum-blue text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl hidden md:block">
-                            <i class="fas fa-plus-circle mr-2"></i>Report Item
-                        </a>
-                        <div class="relative group">
-                            <button
-                                class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <div
-                                    class="w-8 h-8 bg-uum-green rounded-full flex items-center justify-center text-white font-semibold">
-                                    <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
-                                </div>
-                                <span
-                                    class="text-gray-700 dark:text-gray-300 hidden lg:block"><?php echo htmlspecialchars($_SESSION['username']); ?></span>
-                                <i class="fas fa-chevron-down text-gray-500 text-xs"></i>
-                            </button>
-                            <div
-                                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                                <a href="dashboard.php"
-                                    class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-t-xl">
-                                    <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
-                                </a>
-                                <a href="my-items.php"
-                                    class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                    <i class="fas fa-box mr-3"></i>My Items
-                                </a>
-
-                                <a href="update-profile.php" class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                    <i class="fas fa-user-cog mr-3"></i>Update Profile
-                                </a>
-
-                                <a href="auth/logout.php"
-                                    class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-b-xl border-t border-gray-200 dark:border-gray-700">
-                                    <i class="fas fa-sign-out-alt mr-3"></i>Logout
-                                </a>
-                            </div>
-                        </div>
-                    <?php else: ?>
-                        <div class="flex space-x-3">
-                            <a href="auth/login.php"
-                                class="text-uum-green hover:text-uum-blue font-medium px-3 py-2 transition-colors hidden md:block">
-                                <i class="fas fa-sign-in-alt mr-2"></i>Login
-                            </a>
-                            <a href="auth/register.php"
-                                class="bg-gradient-to-r from-uum-green to-uum-blue hover:from-uum-blue hover:to-uum-green text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
-                                <i class="fas fa-user-plus mr-2"></i>Join UUM
-                            </a>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </nav>
-
     <!-- Header Section -->
     <section class="bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 py-8 md:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -262,11 +98,15 @@ if ($total_lost_ever > 0) {
                 <!-- Quick Stats -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 max-w-2xl mx-auto">
                     <div class="text-center">
-                        <div class="text-2xl md:text-3xl font-bold text-uum-green dark:text-uum-gold"><?php echo $total_active; ?></div>
+                        <div class="text-2xl md:text-3xl font-bold text-uum-green dark:text-uum-gold">
+                            <?php echo $total_active; ?>
+                        </div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">Active Items</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400"><?php echo $this_week_count; ?></div>
+                        <div class="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400">
+                            <?php echo $this_week_count; ?>
+                        </div>
                         <div class="text-sm text-gray-600 dark:text-gray-400">This Week</div>
                     </div>
                     <div class="text-center">
@@ -535,7 +375,8 @@ if ($total_lost_ever > 0) {
                             data-location="<?php echo strtolower($item['location_name']); ?>"
                             data-date="<?php echo $item['created_at']; ?>">
 
-                            <div class="relative h-48 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800">
+                            <div
+                                class="relative h-48 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800">
                                 <div class="absolute top-3 right-3 z-10">
                                     <span class="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">Lost</span>
                                 </div>
@@ -551,7 +392,8 @@ if ($total_lost_ever > 0) {
                                         default => 'fa-box-open'
                                     };
                                     ?>
-                                    <i class="fas <?php echo $icon; ?> text-3xl text-blue-600 dark:text-blue-400 drop-shadow-md"></i>
+                                    <i
+                                        class="fas <?php echo $icon; ?> text-3xl text-blue-600 dark:text-blue-400 drop-shadow-md"></i>
                                 </div>
 
                                 <?php if ($item['image_path']): ?>
@@ -560,7 +402,8 @@ if ($total_lost_ever > 0) {
                                         class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
                                 <?php endif; ?>
 
-                                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center">
+                                <div
+                                    class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center">
                                     <a href="view-item.php?id=<?php echo $item['id']; ?>"
                                         class="view-item-btn opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 bg-white text-uum-green px-4 py-2 rounded-lg font-medium shadow-lg hover:bg-gray-50">
                                         View Details
@@ -570,10 +413,12 @@ if ($total_lost_ever > 0) {
 
                             <div class="p-4">
                                 <div class="flex items-start justify-between mb-2">
-                                    <h3 class="font-bold text-gray-900 dark:text-white text-lg truncate" title="<?php echo htmlspecialchars($item['title']); ?>">
+                                    <h3 class="font-bold text-gray-900 dark:text-white text-lg truncate"
+                                        title="<?php echo htmlspecialchars($item['title']); ?>">
                                         <?php echo htmlspecialchars($item['title']); ?>
                                     </h3>
-                                    <span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full whitespace-nowrap">
+                                    <span
+                                        class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full whitespace-nowrap">
                                         <?php echo htmlspecialchars($item['category']); ?>
                                     </span>
                                 </div>
@@ -585,16 +430,20 @@ if ($total_lost_ever > 0) {
                                 <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                                     <div class="flex items-center">
                                         <i class="fas fa-map-marker-alt mr-1"></i>
-                                        <span class="truncate max-w-[100px]"><?php echo htmlspecialchars($item['location_name']); ?></span>
+                                        <span
+                                            class="truncate max-w-[100px]"><?php echo htmlspecialchars($item['location_name']); ?></span>
                                     </div>
                                     <div>
                                         <?php
                                         // Calculate generic "Time Ago"
                                         $time = strtotime($item['created_at']);
                                         $diff = time() - $time;
-                                        if ($diff < 3600) echo floor($diff / 60) . " mins ago";
-                                        else if ($diff < 86400) echo floor($diff / 3600) . " hours ago";
-                                        else echo floor($diff / 86400) . " days ago";
+                                        if ($diff < 3600)
+                                            echo floor($diff / 60) . " mins ago";
+                                        else if ($diff < 86400)
+                                            echo floor($diff / 3600) . " hours ago";
+                                        else
+                                            echo floor($diff / 86400) . " days ago";
                                         ?>
                                     </div>
                                 </div>
@@ -603,7 +452,8 @@ if ($total_lost_ever > 0) {
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div class="col-span-full py-12 text-center">
-                        <div class="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div
+                            class="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i class="fas fa-search text-3xl text-gray-400"></i>
                         </div>
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No lost items found</h3>
@@ -680,70 +530,10 @@ if ($total_lost_ever > 0) {
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-8 md:py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
-                <div>
-                    <div class="flex items-center space-x-3 mb-4">
-                        <div
-                            class="w-10 h-10 bg-gradient-to-r from-uum-green to-uum-blue rounded-lg flex items-center justify-center">
-                            <i class="fas fa-search-location text-white"></i>
-                        </div>
-                        <span class="text-xl font-bold text-uum-gold">UUM Find</span>
-                    </div>
-                    <p class="text-gray-400 text-sm">
-                        Official Lost & Found Portal of Universiti Utara Malaysia.
-                    </p>
-                </div>
-
-                <div>
-                    <h3 class="text-lg font-semibold mb-3 md:mb-4">Quick Links</h3>
-                    <ul class="space-y-2 text-gray-400 text-sm">
-                        <li><a href="index.php" class="hover:text-uum-gold transition-colors">Home</a></li>
-                        <li><a href="lost-items.php" class="hover:text-uum-gold transition-colors">Lost Items</a></li>
-                        <li><a href="found-items.php" class="hover:text-uum-gold transition-colors">Found Items</a></li>
-                        <li><a href="dashboard.php" class="hover:text-uum-gold transition-colors">Dashboard</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="text-lg font-semibold mb-3 md:mb-4">Support</h3>
-                    <ul class="space-y-2 text-gray-400 text-sm">
-                        <li><a href="#" class="hover:text-uum-gold transition-colors">Help Center</a></li>
-                        <li><a href="#" class="hover:text-uum-gold transition-colors">Contact UUM IT</a></li>
-                        <li><a href="#" class="hover:text-uum-gold transition-colors">Privacy Policy</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="text-lg font-semibold mb-3 md:mb-4">Campus Contact</h3>
-                    <div class="space-y-2 text-gray-400 text-sm">
-                        <div class="flex items-center">
-                            <i class="fas fa-phone mr-2 text-uum-gold"></i>
-                            <span>+604 928 4000</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-envelope mr-2 text-uum-gold"></i>
-                            <span>find@uum.edu.my</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-map-marker-alt mr-2 text-uum-gold"></i>
-                            <span>Sintok, Kedah</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="border-t border-gray-700 mt-6 md:mt-8 pt-6 md:pt-8 text-center text-gray-400 text-sm">
-                <p>&copy; 2025 Universiti Utara Malaysia - Lost & Found Portal. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
-    <script src="js/theme.js"></script>
-    <script src="js/mobile-menu.js"></script>
-    <script src="js/lost-items_page/lost-items.js"></script>
+    <!-- Footer section -->
+    <?php include 'includes/footer.php'; ?>
 </body>
+
+<script src="js/lost-items_page/lost-items.js"></script>
 
 </html>

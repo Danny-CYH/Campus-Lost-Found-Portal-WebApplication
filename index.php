@@ -1,4 +1,6 @@
 <?php include 'includes/config.php'; ?>
+<?php include 'includes/header.php'; ?>
+
 <!DOCTYPE html>
 <html lang="en" class="<?php echo isset($_COOKIE['theme']) ? $_COOKIE['theme'] : 'light'; ?>">
 
@@ -44,84 +46,6 @@
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-    <!-- NAVIGATION BAR -->
-    <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg sticky top-0 z-30">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <!-- Logo -->
-                <div class="flex items-center">
-                    <a href="index.php" class="flex items-center space-x-3">
-                        <div
-                            class="w-10 h-10 bg-gradient-to-r from-uum-green to-uum-blue rounded-xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-search-location text-white text-lg"></i>
-                        </div>
-                        <div>
-                            <span class="text-xl font-bold text-uum-green dark:text-uum-gold">UUM Find</span>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 -mt-1">Lost & Found Portal</p>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Desktop Menu -->
-                <div class="hidden md:flex items-center space-x-6">
-                    <a href="index.php"
-                        class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Home</a>
-                    <a href="lost-items.php"
-                        class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Lost
-                        Items</a>
-                    <a href="found-items.php"
-                        class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Found
-                        Items</a>
-                </div>
-
-                <!-- User Menu -->
-                <div class="flex items-center space-x-4">
-                    <button id="theme-toggle"
-                        class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300">
-                        <i class="fas fa-moon text-gray-600 dark:text-uum-gold text-lg" id="theme-icon"></i>
-                    </button>
-
-                    <div class="relative group">
-                        <button
-                            class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                            <div
-                                class="w-8 h-8 bg-uum-green rounded-full flex items-center justify-center text-white font-semibold">
-                                <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
-                            </div>
-                            <span
-                                class="text-gray-700 dark:text-gray-300 hidden lg:block"><?php echo htmlspecialchars($_SESSION['username']); ?></span>
-                            <i class="fas fa-chevron-down text-gray-500 text-xs"></i>
-                        </button>
-                        <!-- Dropdown Menu -->
-                        <div
-                            class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                            <a href="dashboard.php"
-                                class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-t-xl">
-                                <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
-                            </a>
-                            <a href="my-items.php"
-                                class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <i class="fas fa-box mr-3"></i>My Items
-                            </a>
-                            <a href="update-profile.php"
-                                class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <i class="fas fa-user-cog mr-3"></i>Update Profile
-                            </a>
-                             <a href="messages.php"
-                                class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <i class="fas fa-user-cog mr-3"></i>Chat
-                            </a>
-                            <a href="auth/logout.php"
-                                class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-b-xl border-t border-gray-200 dark:border-gray-700">
-                                <i class="fas fa-sign-out-alt mr-3"></i>Logout
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
-
     <!-- Hero Section -->
     <section
         class="relative bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 py-12 md:py-20">
@@ -414,85 +338,6 @@
         </div>
     </section>
 
-    <!-- Campus Map Section -->
-    <section id="campus-map" class="py-12 md:py-20 bg-gray-50 dark:bg-gray-900">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-12 md:mb-16">
-                <h2 class="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-3 md:mb-4">
-                    UUM Campus
-                    <span class="text-uum-green dark:text-uum-gold">Map</span>
-                </h2>
-                <p class="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                    Explore lost and found items across our beautiful UUM campus in Sintok.
-                </p>
-            </div>
-
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
-                <div class="p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <h3 class="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">Interactive Campus
-                            Map</h3>
-                        <div class="flex flex-wrap gap-2">
-                            <button class="px-3 py-1.5 bg-uum-green text-white rounded-lg text-sm font-medium">
-                                <i class="fas fa-lost-item mr-1"></i>Lost Items
-                            </button>
-                            <button class="px-3 py-1.5 bg-uum-blue text-white rounded-lg text-sm font-medium">
-                                <i class="fas fa-found-item mr-1"></i>Found Items
-                            </button>
-                            <button
-                                class="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium">
-                                <i class="fas fa-filter mr-1"></i>Filter
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Map Container -->
-                <div
-                    class="h-64 md:h-96 bg-gradient-to-br from-green-100 to-blue-100 dark:from-gray-700 dark:to-gray-800 relative">
-                    <!-- Simplified UUM Map Representation -->
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <div class="text-center">
-                            <i class="fas fa-map text-4xl md:text-6xl text-uum-green dark:text-uum-gold mb-4"></i>
-                            <h4 class="text-lg md:text-xl font-semibold text-gray-700 dark:text-gray-300">UUM Campus Map
-                            </h4>
-                            <p class="text-gray-600 dark:text-gray-400 mt-2 text-sm md:text-base">Interactive map
-                                loading...</p>
-                            <div class="mt-4 inline-flex items-center px-4 py-2 bg-uum-green text-white rounded-lg">
-                                <i class="fas fa-sync-alt mr-2"></i>Enable Location Services
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Building Markers (Simplified) -->
-                    <div class="absolute top-1/4 left-1/4 w-3 h-3 bg-red-500 rounded-full animate-pulse"
-                        title="Library"></div>
-                    <div class="absolute top-1/3 right-1/4 w-3 h-3 bg-blue-500 rounded-full animate-pulse" title="EDC">
-                    </div>
-                    <div class="absolute bottom-1/3 left-1/3 w-3 h-3 bg-green-500 rounded-full animate-pulse"
-                        title="Student Center"></div>
-                </div>
-
-                <div class="p-4 md:p-6 bg-gray-50 dark:bg-gray-700">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                        <div class="text-center">
-                            <div class="font-semibold text-uum-green">Library Area</div>
-                            <div class="text-gray-600 dark:text-gray-400">8 active items</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="font-semibold text-uum-blue">EDC Building</div>
-                            <div class="text-gray-600 dark:text-gray-400">12 active items</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="font-semibold text-green-500">Student Center</div>
-                            <div class="text-gray-600 dark:text-gray-400">5 active items</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- How It Works Section -->
     <section id="how-it-works" class="py-12 md:py-20 bg-white dark:bg-gray-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -704,72 +549,8 @@
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-8 md:py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
-                <div>
-                    <div class="flex items-center space-x-3 mb-4">
-                        <div
-                            class="w-10 h-10 bg-gradient-to-r from-uum-green to-uum-blue rounded-lg flex items-center justify-center">
-                            <i class="fas fa-search-location text-white"></i>
-                        </div>
-                        <span class="text-xl font-bold text-uum-gold">UUM Find</span>
-                    </div>
-                    <p class="text-gray-400 text-sm">
-                        Official Lost & Found Portal of Universiti Utara Malaysia. Helping campus communities since
-                        2025.
-                    </p>
-                </div>
-
-                <div>
-                    <h3 class="text-lg font-semibold mb-3 md:mb-4">UUM Links</h3>
-                    <ul class="space-y-2 text-gray-400 text-sm">
-                        <li><a href="https://www.uum.edu.my" class="hover:text-uum-gold transition-colors">UUM Main
-                                Website</a></li>
-                        <li><a href="https://ecampus.uum.edu.my" class="hover:text-uum-gold transition-colors">UUM
-                                e-Campus</a></li>
-                        <li><a href="https://library.uum.edu.my" class="hover:text-uum-gold transition-colors">UUM
-                                Library</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="text-lg font-semibold mb-3 md:mb-4">Support</h3>
-                    <ul class="space-y-2 text-gray-400 text-sm">
-                        <li><a href="#" class="hover:text-uum-gold transition-colors">Help Center</a></li>
-                        <li><a href="#" class="hover:text-uum-gold transition-colors">Contact UUM IT</a></li>
-                        <li><a href="#" class="hover:text-uum-gold transition-colors">Privacy Policy</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="text-lg font-semibold mb-3 md:mb-4">Campus Contact</h3>
-                    <div class="space-y-2 text-gray-400 text-sm">
-                        <div class="flex items-center">
-                            <i class="fas fa-phone mr-2 text-uum-gold"></i>
-                            <span>+604 928 4000</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-envelope mr-2 text-uum-gold"></i>
-                            <span>find@uum.edu.my</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-map-marker-alt mr-2 text-uum-gold"></i>
-                            <span>Sintok, Kedah</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="border-t border-gray-700 mt-6 md:mt-8 pt-6 md:pt-8 text-center text-gray-400 text-sm">
-                <p>&copy; 2025 Universiti Utara Malaysia - Lost & Found Portal. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
-    <script src="js/theme.js"></script>
-    <!-- <script src="js/mobile-menu.js"></script> -->
+    <!-- Footer sections -->
+    <?php include 'includes/footer.php'; ?>
 </body>
 
 </html>
