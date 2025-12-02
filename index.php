@@ -44,79 +44,11 @@
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-    <!-- Mobile Menu Button -->
-    <div class="md:hidden fixed top-4 right-4 z-50">
-        <button id="mobile-menu-button"
-            class="p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg">
-            <i class="fas fa-bars text-gray-700 dark:text-gray-300"></i>
-        </button>
-    </div>
-
-    <!-- Mobile Menu -->
-    <div id="mobile-menu"
-        class="fixed inset-0 bg-white dark:bg-gray-800 z-40 transform translate-x-full transition-transform duration-300 md:hidden">
-        <div class="flex flex-col h-full p-6">
-            <div class="flex justify-between items-center mb-8">
-                <a href="index.php" class="flex items-center space-x-3">
-                    <div
-                        class="w-10 h-10 bg-gradient-to-r from-uum-green to-uum-blue rounded-xl flex items-center justify-center shadow-lg">
-                        <i class="fas fa-search-location text-white text-lg"></i>
-                    </div>
-                    <div>
-                        <span class="text-xl font-bold text-uum-green dark:text-uum-gold">
-                            UUM Find
-                        </span>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 -mt-1">Lost & Found</p>
-                    </div>
-                </a>
-                <button id="close-mobile-menu" class="p-2">
-                    <i class="fas fa-times text-gray-600 dark:text-gray-400 text-xl"></i>
-                </button>
-            </div>
-
-            <nav class="flex-1 space-y-6">
-                <a href="#features"
-                    class="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-uum-green transition-colors py-3 border-b border-gray-200 dark:border-gray-700">
-                    <i class="fas fa-star mr-3"></i>Home
-                </a>
-                <a href="#how-it-works"
-                    class="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-uum-green transition-colors py-3 border-b border-gray-200 dark:border-gray-700">
-                    <i class="fas fa-play-circle mr-3"></i>Lost Item
-                </a>
-                <a href="#recent-items"
-                    class="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-uum-green transition-colors py-3 border-b border-gray-200 dark:border-gray-700">
-                    <i class="fas fa-clock mr-3"></i>Found Items
-                </a>
-                <a href="#campus-map"
-                    class="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-uum-green transition-colors py-3 border-b border-gray-200 dark:border-gray-700">
-                    <i class="fas fa-map mr-3"></i>Messages
-                </a>
-            </nav>
-
-            <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
-                <?php if (isset($_SESSION['user_id'])): ?>
-                    <a href="dashboard.php"
-                        class="block w-full bg-uum-green hover:bg-umm-blue text-white text-center py-3 rounded-xl font-medium transition-colors mb-3">
-                        <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
-                    </a>
-                <?php else: ?>
-                    <a href="auth/login.php"
-                        class="block w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-center py-3 rounded-xl font-medium transition-colors mb-3">
-                        <i class="fas fa-sign-in-alt mr-2"></i>Login
-                    </a>
-                    <a href="auth/register.php"
-                        class="block w-full bg-uum-green hover:bg-umm-blue text-white text-center py-3 rounded-xl font-medium transition-colors">
-                        <i class="fas fa-user-plus mr-2"></i>Register
-                    </a>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-
-    <!-- Navigation -->
-    <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg sticky top-0 z-30 hidden md:block">
+    <!-- NAVIGATION BAR -->
+    <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg sticky top-0 z-30">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
+                <!-- Logo -->
                 <div class="flex items-center">
                     <a href="index.php" class="flex items-center space-x-3">
                         <div
@@ -124,43 +56,67 @@
                             <i class="fas fa-search-location text-white text-lg"></i>
                         </div>
                         <div>
-                            <span class="text-xl font-bold text-uum-green dark:text-uum-gold">
-                                UUM Find
-                            </span>
+                            <span class="text-xl font-bold text-uum-green dark:text-uum-gold">UUM Find</span>
                             <p class="text-xs text-gray-500 dark:text-gray-400 -mt-1">Lost & Found Portal</p>
                         </div>
                     </a>
                 </div>
 
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="index.php"
+                        class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Home</a>
+                    <a href="lost-items.php"
+                        class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Lost
+                        Items</a>
+                    <a href="found-items.php"
+                        class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Found
+                        Items</a>
+                </div>
+
+                <!-- User Menu -->
                 <div class="flex items-center space-x-4">
                     <button id="theme-toggle"
-                        class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 transform hover:scale-110">
+                        class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300">
                         <i class="fas fa-moon text-gray-600 dark:text-uum-gold text-lg" id="theme-icon"></i>
                     </button>
 
-                    <div class="hidden md:flex space-x-6">
-                        <a href="index.php"
-                            class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Home</a>
-                        <a href="lost-items.php"
-                            class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">List
-                            Items</a>
-                        <a href="chat.php"
-                            class="text-gray-700 dark:text-gray-300 hover:text-uum-green font-medium transition-colors">Messages</a>
-                    </div>
-
-                    <?php if (isset($_SESSION['user_id'])): ?>
-                        <a href="dashboard.php"
-                            class="bg-uum-green hover:bg-uum-blue text-white px-6 py-2.5 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
-                            <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
-                        </a>
-                    <?php else: ?>
-                        <div class="flex space-x-3">
-                            <a href="auth/login.php"
-                                class="text-uum-green hover:text-uum-blue font-medium px-4 py-2 transition-colors">
-                                <i class="fas fa-sign-in-alt mr-2"></i>Login
+                    <div class="relative group">
+                        <button
+                            class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <div
+                                class="w-8 h-8 bg-uum-green rounded-full flex items-center justify-center text-white font-semibold">
+                                <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
+                            </div>
+                            <span
+                                class="text-gray-700 dark:text-gray-300 hidden lg:block"><?php echo htmlspecialchars($_SESSION['username']); ?></span>
+                            <i class="fas fa-chevron-down text-gray-500 text-xs"></i>
+                        </button>
+                        <!-- Dropdown Menu -->
+                        <div
+                            class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                            <a href="dashboard.php"
+                                class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-t-xl">
+                                <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
+                            </a>
+                            <a href="my-items.php"
+                                class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <i class="fas fa-box mr-3"></i>My Items
+                            </a>
+                            <a href="update-profile.php"
+                                class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <i class="fas fa-user-cog mr-3"></i>Update Profile
+                            </a>
+                             <a href="messages.php"
+                                class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <i class="fas fa-user-cog mr-3"></i>Chat
+                            </a>
+                            <a href="auth/logout.php"
+                                class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-b-xl border-t border-gray-200 dark:border-gray-700">
+                                <i class="fas fa-sign-out-alt mr-3"></i>Logout
                             </a>
                         </div>
-                    <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
@@ -187,21 +143,12 @@
                         across our beautiful campus.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start">
-                        <?php if (isset($_SESSION['user_id'])): ?>
-                            <a href="report-item.php"
-                                class="bg-gradient-to-r from-uum-green to-uum-blue hover:from-uum-blue hover:to-uum-green text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl text-center">
-                                <i class="fas fa-plus-circle mr-2"></i>Report Item
-                            </a>
-                        <?php else: ?>
-                            <a href="auth/register.php"
-                                class="bg-gradient-to-r from-uum-green to-uum-blue hover:from-uum-blue hover:to-uum-green text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl text-center">
-                                <i class="fas fa-rocket mr-2"></i>Register Now
-                            </a>
-                            <a href="#features"
-                                class="border-2 border-uum-green text-uum-green dark:text-uum-gold hover:bg-uum-green hover:text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg transition-all duration-300 text-center">
-                                <i class="fas fa-play-circle mr-2"></i>Learn More
-                            </a>
-                        <?php endif; ?>
+                        <?php if (isset($_SESSION['user_id'])) ?>
+                        <!-- Report Item Button (Desktop) -->
+                        <a href="report-item.php"
+                            class="bg-green-600 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl hidden md:flex items-center">
+                            <i class="fas fa-plus-circle mr-2"></i>Report Item
+                        </a>
                     </div>
 
                     <div class="mt-8 md:mt-12 grid grid-cols-3 gap-4 md:gap-8 text-center">
@@ -822,7 +769,7 @@
     </footer>
 
     <script src="js/theme.js"></script>
-    <script src="js/mobile-menu.js"></script>
+    <!-- <script src="js/mobile-menu.js"></script> -->
 </body>
 
 </html>

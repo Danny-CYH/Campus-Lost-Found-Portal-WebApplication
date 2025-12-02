@@ -1,6 +1,5 @@
 <?php
 require_once 'includes/config.php';
-require_once 'includes/functions.php';
 
 // Redirect if not logged in
 if (!isset($_SESSION['user_id'])) {
@@ -8,25 +7,56 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Get user's items
+// Get user's items with more details
 $user_id = $_SESSION['user_id'];
-$stmt = $pdo->prepare("SELECT * FROM items WHERE user_id = ? ORDER BY created_at DESC");
+
+// Get user's items statistics
+$stmt = $pdo->prepare("
+    SELECT 
+        status,
+        COUNT(*) as count,
+        GROUP_CONCAT(CASE WHEN status = 'lost' THEN title END) as lost_items,
+        GROUP_CONCAT(CASE WHEN status = 'found' THEN title END) as found_items,
+        GROUP_CONCAT(CASE WHEN status = 'returned' THEN title END) as returned_items
+    FROM items 
+    WHERE user_id = ? 
+    GROUP BY status
+");
 $stmt->execute([$user_id]);
-$user_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$item_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get recent items (last 10)
+$stmt = $pdo->prepare("SELECT * FROM items WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
+$stmt->execute([$user_id]);
+$recent_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get all items for the map
 $stmt = $pdo->prepare("SELECT * FROM items WHERE status != 'returned' ORDER BY created_at DESC");
 $stmt->execute();
 $all_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get claims on user's items
+// Get claims statistics
 $stmt = $pdo->prepare("
-    SELECT c.*, i.title, u.username as claimant_name 
+    SELECT 
+        c.status,
+        COUNT(*) as count
+    FROM claims c 
+    JOIN items i ON c.item_id = i.id 
+    WHERE i.user_id = ? 
+    GROUP BY c.status
+");
+$stmt->execute([$user_id]);
+$claim_stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get recent claims on user's items
+$stmt = $pdo->prepare("
+    SELECT c.*, i.title, u.username as claimant_name, u.email as claimant_email
     FROM claims c 
     JOIN items i ON c.item_id = i.id 
     JOIN users u ON c.claimant_id = u.id 
     WHERE i.user_id = ? 
-    ORDER BY c.created_at DESC
+    ORDER BY c.created_at DESC 
+    LIMIT 5
 ");
 $stmt->execute([$user_id]);
 $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -65,11 +95,80 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
         </div>
+    </header>
 
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-500">
-                    <i class="fas fa-check-circle text-xl"></i>
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="bg-white dark:bg-gray-800 w-64 min-h-screen shadow-md sidebar-transition hidden md:block">
+            <nav class="mt-8 px-4">
+                <div class="space-y-2">
+                    <a href="dashboard.php"
+                        class="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/30 rounded-lg border-l-4 border-blue-500">
+                        <i class="fas fa-home mr-3"></i>
+                        <span class="font-medium">Dashboard</span>
+                    </a>
+                    <a href="browse.php"
+                        class="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-search mr-3"></i>
+                        <span class="font-medium">Browse Items</span>
+                    </a>
+                    <a href="report-item.php"
+                        class="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-plus mr-3"></i>
+                        <span class="font-medium">Report Item</span>
+                    </a>
+                    <a href="map.php"
+                        class="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-map-marker-alt mr-3"></i>
+                        <span class="font-medium">Campus Map</span>
+                    </a>
+                    <a href="messages.php"
+                        class="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-comments mr-3"></i>
+                        <span class="font-medium">Messages</span>
+                        <?php if (count($recent_claims) > 0): ?>
+                            <span
+                                class="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                <?php echo count($recent_claims); ?>
+                            </span>
+                        <?php endif; ?>
+                    </a>
+                    <a href="history.php"
+                        class="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-history mr-3"></i>
+                        <span class="font-medium">Activity History</span>
+                    </a>
+                    <a href="settings.php"
+                        class="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                        <i class="fas fa-cog mr-3"></i>
+                        <span class="font-medium">Settings</span>
+                    </a>
+                </div>
+
+                <!-- Quick Stats Sidebar -->
+                <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                        Quick Stats
+                    </h3>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Active Items</p>
+                            <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <?php echo $lost_count + $found_count; ?></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Pending Claims</p>
+                            <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <?php echo $pending_claims; ?></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Return Rate</p>
+                            <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <?php echo $total_items > 0 ? round(($returned_count / $total_items) * 100) : 0; ?>%
+                            </p>
+                        </div>
+                    </div>
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Returned Items</p>
@@ -83,22 +182,77 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </p>
                 </div>
             </div>
-        </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-500">
-                    <i class="fas fa-bell text-xl"></i>
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Lost Items Card -->
+                <div class="stat-card bg-white dark:bg-gray-800 rounded-xl shadow p-6 border-l-4 border-red-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Lost Items</p>
+                            <p class="text-3xl font-semibold text-gray-900 dark:text-white mt-1">
+                                <?php echo $lost_count; ?></p>
+                        </div>
+                        <div class="p-3 rounded-full bg-red-100 dark:bg-red-900 text-red-500">
+                            <i class="fas fa-exclamation-triangle text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        Items you've reported as lost
+                    </div>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Claims</p>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white">
-                        <?php echo count($claims_on_my_items); ?>
-                    </p>
+
+                <!-- Found Items Card -->
+                <div class="stat-card bg-white dark:bg-gray-800 rounded-xl shadow p-6 border-l-4 border-yellow-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Found Items</p>
+                            <p class="text-3xl font-semibold text-gray-900 dark:text-white mt-1">
+                                <?php echo $found_count; ?></p>
+                        </div>
+                        <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-500">
+                            <i class="fas fa-search text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        Items you've reported as found
+                    </div>
+                </div>
+
+                <!-- Returned Items Card -->
+                <div class="stat-card bg-white dark:bg-gray-800 rounded-xl shadow p-6 border-l-4 border-green-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Returned Items</p>
+                            <p class="text-3xl font-semibold text-gray-900 dark:text-white mt-1">
+                                <?php echo $returned_count; ?></p>
+                        </div>
+                        <div class="p-3 rounded-full bg-green-100 dark:bg-green-900 text-green-500">
+                            <i class="fas fa-check-circle text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        Successfully returned items
+                    </div>
+                </div>
+
+                <!-- Pending Claims Card -->
+                <div class="stat-card bg-white dark:bg-gray-800 rounded-xl shadow p-6 border-l-4 border-purple-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Claims</p>
+                            <p class="text-3xl font-semibold text-gray-900 dark:text-white mt-1">
+                                <?php echo $pending_claims; ?></p>
+                        </div>
+                        <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-500">
+                            <i class="fas fa-bell text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        Claims waiting for review
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- My Items Section -->
@@ -317,66 +471,113 @@ $claims_on_my_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                 </div>
 
-                <div>
-                    <label for="description"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Description *</label>
-                    <textarea id="description" name="description" rows="3" required
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status
-                            *</label>
-                        <select id="status" name="status" required
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            <option value="lost">Lost</option>
-                            <option value="found">Found</option>
-                        </select>
+                <!-- Right Column: Map & Activity -->
+                <div class="space-y-8">
+                    <!-- Campus Map Section -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                            <h2 class="text-xl font-semibold">Campus Map</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Lost & Found Hotspots</p>
+                        </div>
+                        <div class="p-4">
+                            <div id="map" class="rounded-lg"></div>
+                            <div class="mt-4 grid grid-cols-2 gap-2">
+                                <?php foreach (array_slice($campus_locations, 0, 4) as $location): ?>
+                                    <div class="flex items-center p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                        <div
+                                            class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mr-2">
+                                            <i class="fas fa-map-marker-alt text-blue-600 dark:text-blue-400 text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900 dark:text-white">
+                                                <?php echo $location['name']; ?></p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                                <?php echo $location['items']; ?> items</p>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <label for="date_occurred"
-                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date Occurred *</label>
-                        <input type="date" id="date_occurred" name="date_occurred" required
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <!-- Recent Activity -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                            <h2 class="text-xl font-semibold">Recent Activity</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Your latest actions</p>
+                        </div>
+                        <div class="p-4">
+                            <div class="space-y-4">
+                                <?php foreach ($recent_activity as $activity): ?>
+                                    <div class="activity-item p-3 rounded-lg">
+                                        <div class="flex items-start space-x-3">
+                                            <div class="activity-type-icon activity-type-<?php echo $activity['type']; ?>">
+                                                <i class="fas fa-<?php
+                                                switch ($activity['type']) {
+                                                    case 'item':
+                                                        echo 'box';
+                                                        break;
+                                                    case 'claim':
+                                                        echo 'clipboard-check';
+                                                        break;
+                                                    case 'message':
+                                                        echo 'comment';
+                                                        break;
+                                                    default:
+                                                        echo 'bell';
+                                                }
+                                                ?> text-sm"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm text-gray-900 dark:text-white">
+                                                    <?php echo htmlspecialchars($activity['description']); ?>
+                                                </p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                    <?php echo date('M j, g:i A', strtotime($activity['date'])); ?>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                                <?php if (empty($recent_activity)): ?>
+                                    <div class="p-4 text-center">
+                                        <i class="fas fa-history text-gray-400 text-3xl mb-2"></i>
+                                        <p class="text-gray-500 dark:text-gray-400">No recent activity</p>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div>
-                    <label for="location_name"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Location Name *</label>
-                    <input type="text" id="location_name" name="location_name" required
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">e.g., "Library - 2nd Floor" or "Student
-                        Union Building"</p>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Pin Location on
-                        Map</label>
-                    <div id="location-map"
-                        class="h-48 w-full rounded-lg border border-gray-300 dark:border-gray-600 mt-1"></div>
-                    <input type="hidden" id="latitude" name="latitude">
-                    <input type="hidden" id="longitude" name="longitude">
-                </div>
-
-                <div>
-                    <label for="secret_identifier"
-                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Secret Identifier *</label>
-                    <input type="text" id="secret_identifier" name="secret_identifier" required
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">This will be used to verify ownership.
-                        e.g., "Last 3 digits of student ID" or a custom word</p>
-                </div>
-
-                <div>
-                    <label for="image" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Item
-                        Image</label>
-                    <input type="file" id="image" name="image" accept="image/*"
-                        class="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-300">
-                    <div id="image-preview" class="mt-2 hidden">
-                        <img id="preview" class="h-32 rounded-lg object-cover">
+                    <!-- Quick Tips -->
+                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl shadow overflow-hidden">
+                        <div class="px-6 py-4 border-b border-blue-100 dark:border-blue-800">
+                            <h2 class="text-xl font-semibold text-blue-900 dark:text-blue-100">Quick Tips</h2>
+                        </div>
+                        <div class="p-4">
+                            <ul class="space-y-3">
+                                <li class="flex items-start space-x-2">
+                                    <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                                    <span class="text-sm text-blue-800 dark:text-blue-200">Report items as soon as you
+                                        lose or find them</span>
+                                </li>
+                                <li class="flex items-start space-x-2">
+                                    <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                                    <span class="text-sm text-blue-800 dark:text-blue-200">Include clear photos and
+                                        detailed descriptions</span>
+                                </li>
+                                <li class="flex items-start space-x-2">
+                                    <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                                    <span class="text-sm text-blue-800 dark:text-blue-200">Verify claimant identity
+                                        before returning items</span>
+                                </li>
+                                <li class="flex items-start space-x-2">
+                                    <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                                    <span class="text-sm text-blue-800 dark:text-blue-200">Update item status promptly
+                                        after resolution</span>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
 

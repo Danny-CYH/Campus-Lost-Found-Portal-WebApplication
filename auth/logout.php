@@ -30,6 +30,6 @@ setcookie('username', '', time() - 3600, '/');
 setcookie('theme', '', time() - 3600, '/');
 
 // Redirect to login page with success message
-header("Location: ../auth/login.php?logout=success");
+header("Location: ../auth/login.php");
 exit();
 ?>

@@ -52,12 +52,12 @@ function validateLogin($pdo, $username, $password)
     } catch (PDOException $e) {
         return [
             'success' => false,
-            'message' => 'Database error: ' . $e->getMessage()
+            'message' => 'An error occurred. Please try again.'
         ];
     }
 }
 
-// Function to log login attempt
+// Function to log login attempt (optional, for security monitoring)
 function logLoginAttempt($pdo, $username, $ip_address, $success, $error_message = null, $user_id = null)
 {
     try {
@@ -67,7 +67,7 @@ function logLoginAttempt($pdo, $username, $ip_address, $success, $error_message 
         ");
         $stmt->execute([$user_id, $username, $ip_address, $success ? 1 : 0, $error_message]);
     } catch (PDOException $e) {
-        // Silently fail logging
+        // Silently fail logging - don't show database errors to users
     }
 }
 
@@ -151,7 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Update last login
                 updateLastLogin($pdo, $user['id']);
 
-                // Log successful login
+                // Log successful login (optional)
                 logLoginAttempt($pdo, $username, $ip_address, true, null, $user['id']);
 
                 // Set session variables
@@ -186,27 +186,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Set success message
                 $_SESSION['login_success'] = "Welcome back, " . htmlspecialchars($user['username']) . "!";
 
-                // Redirect to dashboard or intended page
+                // REDIRECT TO HOME PAGE INSTEAD OF DASHBOARD
                 if (isset($_SESSION['redirect_url'])) {
                     $redirect_url = $_SESSION['redirect_url'];
                     unset($_SESSION['redirect_url']);
                     header('Location: ' . $redirect_url);
                 } else {
-                    header('Location: ../index.php');
+                    header('Location: ../index.php'); // Changed from dashboard.php to index.php
                 }
                 exit;
 
             } else {
-                // Login failed
+                // Login failed - add error message
                 $errors[] = $login_result['message'];
 
-                // Log failed attempt
+                // Log failed attempt (optional)
                 logLoginAttempt($pdo, $username, $ip_address, false, $login_result['message']);
             }
         }
     }
 
-    // If there are errors, redirect back to login form
+    // If there are errors, redirect back to login form with errors
     if (!empty($errors)) {
         // Store errors and form data in session
         $_SESSION['login_errors'] = $errors;
@@ -223,4 +223,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Location: ../auth/login.php');
     exit;
 }
-?>
