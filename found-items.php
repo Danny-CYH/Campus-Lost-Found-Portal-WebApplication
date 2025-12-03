@@ -414,6 +414,13 @@ if ($total_found_ever > 0) {
 
     <!-- Footer sections -->
     <?php include 'includes/footer.php'; ?>
+    <script src="js/theme.js"></script>
+
+    <!-- 2. Global App Logic (Mobile Menu, etc.) -->
+    <script src="js/app.js"></script>
+
+    <!-- 3. Page Specific Logic -->
+    <script src="js/lost-items.js"></script>
 </body>
 
 <script src="js/lost-items_page/lost-items.js"></script>
