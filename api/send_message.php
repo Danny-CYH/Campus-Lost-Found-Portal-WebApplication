@@ -1,93 +1,134 @@
 <?php
-session_start();
+// send_message.php
 require_once '../includes/config.php';
 
+// Start session at the very beginning
+session_start();
+
+// Set headers FIRST
 header('Content-Type: application/json');
 
-// Enable detailed error reporting
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'error' => 'Invalid request method']);
-    exit;
-}
-
+// Check authentication
 if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['success' => false, 'error' => 'Not logged in']);
-    exit;
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'Not authenticated']);
+    exit();
 }
 
-// Get input data
-$input = json_decode(file_get_contents('php://input'), true);
-$message = trim($input['message'] ?? '');
-$conversation_id = $input['conversation_id'] ?? '';
-$receiver_id = $input['receiver_id'] ?? '';
+// Check request method
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    exit();
+}
 
-// Validate input
-if (empty($message) || empty($conversation_id) || empty($receiver_id)) {
-    echo json_encode(['success' => false, 'error' => 'Missing required fields']);
-    exit;
+// Get the input data
+$input = json_decode(file_get_contents('php://input'), true);
+
+// Log for debugging (remove in production)
+error_log('Received data: ' . print_r($input, true));
+
+if (json_last_error() !== JSON_ERROR_NONE) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Invalid JSON input']);
+    exit();
+}
+
+// Validate required fields
+$required_fields = ['message', 'conversation_id', 'receiver_id'];
+foreach ($required_fields as $field) {
+    if (!isset($input[$field]) || empty($input[$field])) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => "Missing required field: $field"]);
+        exit();
+    }
+}
+
+// Sanitize and validate
+$message = trim($input['message']);
+$conversation_id = intval($input['conversation_id']);
+$receiver_id = intval($input['receiver_id']);
+$sender_id = intval($_SESSION['user_id']);
+
+if (empty($message)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Message cannot be empty']);
+    exit();
+}
+
+if ($conversation_id <= 0 || $receiver_id <= 0) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Invalid conversation or receiver ID']);
+    exit();
 }
 
 try {
-    // Verify conversation and user access
-    $verify_stmt = $pdo->prepare("SELECT id, user1_id, user2_id FROM conversations WHERE id = ? AND (user1_id = ? OR user2_id = ?)");
-    $verify_stmt->execute([$conversation_id, $_SESSION['user_id'], $_SESSION['user_id']]);
-    $conversation = $verify_stmt->fetch();
+    // Begin transaction for data consistency
+    $pdo->beginTransaction();
 
-    if (!$conversation) {
-        echo json_encode(['success' => false, 'error' => 'Invalid conversation']);
-        exit;
-    }
-
-    // Insert message
-    $insert_stmt = $pdo->prepare("INSERT INTO messages (conversation_id, sender_id, receiver_id, message, created_at, is_read) VALUES (?, ?, ?, ?, NOW(), 0)");
-    $insert_result = $insert_stmt->execute([$conversation_id, $_SESSION['user_id'], $receiver_id, $message]);
-
-    if (!$insert_result) {
-        throw new Exception("Failed to insert message");
-    }
-
+    // Save message to database
+    $stmt = $pdo->prepare("INSERT INTO messages (conversation_id, sender_id, receiver_id, message, created_at, is_read) 
+                           VALUES (?, ?, ?, ?, NOW(), 0)");
+    $stmt->execute([$conversation_id, $sender_id, $receiver_id, $message]);
     $message_id = $pdo->lastInsertId();
 
-    // Get message data
-    $select_stmt = $pdo->prepare("SELECT m.*, u.username as sender_username FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.id = ?");
-    $select_stmt->execute([$message_id]);
-    $message_data = $select_stmt->fetch();
+    // Get sender info
+    $stmt = $pdo->prepare("SELECT username FROM users WHERE id = ?");
+    $stmt->execute([$sender_id]);
+    $sender = $stmt->fetch();
 
-    // Format Pusher data
-    $pusher_data = [
-        'id' => $message_data['id'],
-        'conversation_id' => $message_data['conversation_id'],
-        'sender_id' => $message_data['sender_id'],
-        'receiver_id' => $message_data['receiver_id'],
-        'sender_username' => $message_data['sender_username'],
-        'sender_initials' => strtoupper(substr($message_data['sender_username'], 0, 1)),
-        'message' => $message_data['message'],
-        'timestamp' => date('g:i A', strtotime($message_data['created_at'])),
-        'created_at' => $message_data['created_at'],
-        'is_read' => $message_data['is_read']
+    if (!$sender) {
+        throw new Exception('Sender not found');
+    }
+
+    // Prepare data for Pusher
+    $messageData = [
+        'message_id' => $message_id,
+        'conversation_id' => $conversation_id,
+        'sender_id' => $sender_id,
+        'sender_name' => $sender['username'],
+        'receiver_id' => $receiver_id,
+        'message' => $message,
+        'created_at' => date('Y-m-d H:i:s'),
+        'is_self_sent' => false // Default for receiver
     ];
 
-    // This will now work correctly - data is passed as array
-    $pusher_success = triggerPusher('private-chat-' . $conversation_id, 'new-message', $pusher_data);
+    // Trigger to receiver's channel
+    if (isset($pusher)) {
+        try {
+            // Trigger to conversation channel (BOTH users will receive this)
+            triggerPusher('private-chat-' . $conversation_id, 'new-message', json_encode($messageData));
 
-    error_log("Pusher trigger result: " . ($pusher_success ? 'SUCCESS' : 'FAILED'));
+            error_log("Pusher triggered to conversation channel: chat-$conversation_id");
 
+        } catch (Exception $e) {
+            error_log("Pusher error: " . $e->getMessage());
+        }
+    }
+
+    // Commit transaction
+    $pdo->commit();
+
+    // Return success response
     echo json_encode([
         'success' => true,
         'message_id' => $message_id,
-        'message_data' => $pusher_data,
-        'pusher_triggered' => $pusher_success,
-        'debug' => [
-            'conversation_id' => $conversation_id,
-            'channel' => 'chat-' . $conversation_id
-        ]
+        'data' => $messageData
     ]);
 
 } catch (Exception $e) {
-    error_log("Error in send_message.php: " . $e->getMessage());
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    // Rollback transaction on error
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
+    error_log('Send message error: ' . $e->getMessage());
+
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Failed to send message: ' . $e->getMessage()
+    ]);
 }
-?>
+
+exit();

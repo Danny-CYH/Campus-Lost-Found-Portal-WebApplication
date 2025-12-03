@@ -101,6 +101,7 @@ if (isset($_GET['start_conversation'])) {
     <title>Campus Lost & Found</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <style>
         /* Modern Chat Styles */
         .messages-container {
@@ -170,7 +171,7 @@ if (isset($_GET['start_conversation'])) {
         .message-time {
             font-size: 11px;
             color: rgba(255, 255, 255, 0.7);
-            margin-top: 2px;
+            margin-top: 4px;
             text-align: right;
         }
 
@@ -415,6 +416,23 @@ if (isset($_GET['start_conversation'])) {
         .dark .messages-container::-webkit-scrollbar-thumb {
             background: #4b5563;
         }
+
+        /* Notification styles */
+        .notification {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 
@@ -580,557 +598,970 @@ if (isset($_GET['start_conversation'])) {
             </div>
         </div>
     </main>
-</body>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Auto-open conversation if coming from view-item.php
-        function autoOpenConversation() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const startConversation = urlParams.get('start_conversation');
-            const conversationId = urlParams.get('conversation_id');
+    <!-- New Chat Modal -->
+    <div id="new-chat-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="modal-content w-full max-w-md bg-white rounded-xl shadow-lg">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900">Start New Chat</h3>
+                    <button id="close-new-chat-modal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
 
-            if (startConversation || conversationId) {
-                let targetConversationItem = null;
+                <form id="new-chat-form">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Select User to Chat With:
+                        </label>
+                        <select name="receiver_id"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required>
+                            <option value="">Select a user...</option>
+                            <?php foreach ($all_users as $user): ?>
+                                <option value="<?php echo $user['id']; ?>">
+                                    <?php echo htmlspecialchars($user['username']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-new-chat"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-colors">
+                            Start Chat
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-                if (conversationId) {
-                    // Find conversation by ID
-                    targetConversationItem = document.querySelector(`.conversation-item[data-conversation-id="${conversationId}"]`);
-                } else if (startConversation) {
-                    // Find conversation by user ID
-                    targetConversationItem = document.querySelector(`.conversation-item[data-other-user-id="${startConversation}"]`);
-                }
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // ===== GLOBAL VARIABLES FOR POLLING =====
+            let messages = []; // Store loaded messages
+            let lastMessageId = 0; // Track last message ID for polling
+            let pollingInterval = null; // Store polling interval
 
-                if (targetConversationItem) {
-                    console.log('Auto-opening conversation:', targetConversationItem);
+            // ===== POLLING FUNCTIONS =====
+            function startPolling(conversationId) {
+                stopPolling(); // Stop any existing polling
 
-                    // Click the conversation item
-                    targetConversationItem.click();
-
-                    // Show chat area on mobile
-                    showChatArea();
-
-                    // Add initial message if provided
-                    const initialMessage = <?php echo $item_context ? json_encode($item_context) : 'null'; ?>;
-                    if (initialMessage && document.getElementById('message-input')) {
-                        document.getElementById('message-input').value = initialMessage;
-
-                        // Auto-send after 1 second (optional)
-                        setTimeout(() => {
-                            if (confirm('Would you like to send a greeting message about the item?')) {
-                                sendMessage();
-                            }
-                        }, 1000);
-                    }
-
-                    // Remove the query parameters from URL without reloading
-                    const newUrl = window.location.pathname;
-                    window.history.replaceState({}, document.title, newUrl);
+                // Set lastMessageId to the highest message ID
+                if (messages.length > 0) {
+                    lastMessageId = Math.max(...messages.map(msg => parseInt(msg.id)));
                 } else {
-                    console.log('Could not find conversation item');
+                    lastMessageId = 0;
+                }
 
-                    // If we have user ID but no conversation, try to create one
-                    if (startConversation && !conversationId) {
-                        setTimeout(() => {
-                            // Find user in new chat modal and create conversation
-                            const newChatBtn = document.getElementById('new-chat-btn');
-                            if (newChatBtn) {
-                                newChatBtn.click();
+                console.log(`🔁 Starting polling for conversation ${conversationId}, lastMessageId: ${lastMessageId}`);
 
-                                // Set the user in the dropdown
-                                setTimeout(() => {
-                                    const select = document.querySelector('select[name="receiver_id"]');
-                                    if (select) {
-                                        select.value = startConversation;
+                // Start polling every 3 seconds
+                pollingInterval = setInterval(async () => {
+                    await checkForNewMessages(conversationId);
+                }, 3000);
+            }
 
-                                        // Auto-submit form after a delay
-                                        setTimeout(() => {
-                                            const form = document.getElementById('new-chat-form');
-                                            if (form) {
-                                                form.submit();
-                                            }
-                                        }, 500);
-                                    }
-                                }, 300);
-                            }
-                        }, 500);
-                    }
+            function stopPolling() {
+                if (pollingInterval) {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                    console.log('🛑 Stopped message polling');
                 }
             }
-        }
 
-        // Call this function after the DOM is loaded
-        setTimeout(autoOpenConversation, 500);
-        // 
-
-        // Chat functionality
-        let currentConversationId = null;
-        let currentReceiverId = null;
-        let currentReceiverName = null;
-
-        // DOM Elements
-        const conversationsSidebar = document.getElementById('conversations-sidebar');
-        const chatArea = document.getElementById('chat-area');
-        const backToConversationsBtn = document.getElementById('back-to-conversations');
-        const newChatModal = document.getElementById('new-chat-modal');
-        const closeNewChatModal = document.getElementById('close-new-chat-modal');
-        const cancelNewChat = document.getElementById('cancel-new-chat');
-        const newChatBtn = document.getElementById('new-chat-btn');
-        const messagesContainer = document.getElementById('messages-container');
-
-        // Mobile responsive functions
-        function showChatArea() {
-            if (window.innerWidth < 768) {
-                conversationsSidebar.classList.add('mobile-hidden');
-                chatArea.classList.add('mobile-active');
-                backToConversationsBtn.style.display = 'flex';
-
-                // Force scroll to bottom when opening chat on mobile
-                setTimeout(() => {
-                    scrollToBottom();
-                }, 100);
-
-                // Prevent body scrolling when chat is open on mobile
-                document.body.style.overflow = 'hidden';
-            }
-        }
-
-        function showConversationsSidebar() {
-            if (window.innerWidth < 768) {
-                conversationsSidebar.classList.remove('mobile-hidden');
-                chatArea.classList.remove('mobile-active');
-                backToConversationsBtn.style.display = 'none';
-
-                // Restore body scrolling
-                document.body.style.overflow = '';
-            }
-        }
-
-        // Back button event listener
-        if (backToConversationsBtn) {
-            backToConversationsBtn.addEventListener('click', showConversationsSidebar);
-        }
-
-        // Open new chat modal
-        if (newChatBtn) {
-            newChatBtn.addEventListener('click', function () {
-                console.log('Opening new chat modal');
-                newChatModal.classList.remove('hidden');
-            });
-        }
-
-        // Close modals
-        if (closeNewChatModal) {
-            closeNewChatModal.addEventListener('click', function () {
-                newChatModal.classList.add('hidden');
-            });
-        }
-
-        if (cancelNewChat) {
-            cancelNewChat.addEventListener('click', function () {
-                newChatModal.classList.add('hidden');
-            });
-        }
-
-        // Close modal when clicking outside
-        document.addEventListener('click', function (event) {
-            if (event.target === newChatModal) {
-                newChatModal.classList.add('hidden');
-            }
-        });
-
-        // New chat form submission
-        const newChatForm = document.getElementById('new-chat-form');
-        if (newChatForm) {
-            newChatForm.addEventListener('submit', async function (e) {
-                e.preventDefault();
-                console.log('Submitting new chat form');
-
-                const formData = new FormData(this);
-                const receiverId = formData.get('receiver_id');
+            async function checkForNewMessages(conversationId) {
+                // Don't check if we're not in the right conversation
+                if (!conversationId || conversationId !== currentConversationId) {
+                    console.log('Polling skipped - wrong conversation');
+                    return;
+                }
 
                 try {
-                    const response = await fetch('api/create_conversation.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `receiver_id=${receiverId}`
-                    });
+                    console.log(`🔍 Polling for new messages after ID: ${lastMessageId}`);
+
+                    const response = await fetch(`api/check_new_messages.php?conversation_id=${conversationId}&after=${lastMessageId}&user_id=${currentUserId}`);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
 
                     const result = await response.json();
-                    console.log('Create conversation response:', result);
 
-                    if (result.success) {
-                        // Get receiver info and open chat
-                        const receiverSelect = document.querySelector('select[name="receiver_id"]');
-                        const selectedOption = receiverSelect.options[receiverSelect.selectedIndex];
-                        const receiverName = selectedOption.text;
+                    if (result.success && result.new_messages && result.new_messages.length > 0) {
+                        console.log(`📨 Found ${result.new_messages.length} new messages via polling`);
 
-                        openChat(result.conversation_id, receiverId, receiverName);
-                        newChatModal.classList.add('hidden');
+                        result.new_messages.forEach(message => {
+                            // Skip messages that we sent (they're already displayed via Pusher/optimistic update)
+                            if (message.sender_id == currentUserId) {
+                                console.log('Skipping own message from polling');
+                                return;
+                            }
 
-                        // Refresh page to show new conversation
-                        setTimeout(() => location.reload(), 1000);
-                    } else {
-                        alert('Error creating conversation: ' + (result.error || 'Unknown error'));
+                            // Check if message already exists
+                            const messageExists = messages.some(msg => msg.id == message.id);
+                            const tempMessageExists = document.querySelector(`[data-message-id="temp-${message.id}"]`);
+
+                            if (!messageExists && !tempMessageExists) {
+                                console.log('Adding new message from polling:', message.id);
+                                messages.push(message);
+                                addMessageToChat(message, true); // true = is received message
+
+                                // Update lastMessageId
+                                lastMessageId = Math.max(lastMessageId, parseInt(message.id));
+                            }
+                        });
+
+                        // Update conversation preview if we got new messages
+                        if (result.new_messages.length > 0) {
+                            const latestMessage = result.new_messages[result.new_messages.length - 1];
+                            updateConversationPreview({
+                                conversation_id: conversationId,
+                                message: latestMessage.message,
+                                created_at: latestMessage.created_at,
+                                sender_name: latestMessage.sender_username || 'User'
+                            });
+                        }
                     }
                 } catch (error) {
-                    console.error('Error creating conversation:', error);
-                    alert('Error creating conversation. Please try again.');
+                    console.error('Polling error:', error);
+                    // Don't show alert, just log error
                 }
-            });
-        }
-
-        // Conversation item click handlers
-        document.querySelectorAll('.conversation-item').forEach(item => {
-            item.addEventListener('click', function () {
-                // Remove active class from all items
-                document.querySelectorAll('.conversation-item').forEach(i => {
-                    i.classList.remove('active');
-                });
-
-                // Add active class to clicked item
-                this.classList.add('active');
-
-                const conversationId = this.getAttribute('data-conversation-id');
-                const receiverId = this.getAttribute('data-other-user-id');
-                const userName = this.getAttribute('data-other-user-name');
-
-                console.log('Opening conversation:', { conversationId, receiverId, userName });
-                openChat(conversationId, receiverId, userName);
-
-                // Show chat area on mobile
-                showChatArea();
-            });
-        });
-
-        function openChat(conversationId, receiverId, userName) {
-            currentConversationId = conversationId;
-            currentReceiverId = receiverId;
-            currentReceiverName = userName;
-
-            console.log('Setting up chat for:', userName);
-
-            // Update chat header
-            document.getElementById('chat-header-username').textContent = userName;
-            document.getElementById('chat-header-avatar').textContent = userName.substring(0, 2).toUpperCase();
-            document.getElementById('chat-header').classList.remove('hidden');
-
-            // Enable message input
-            document.getElementById('message-input').disabled = false;
-            document.getElementById('send-message').disabled = false;
-
-            // Focus on message input
-            setTimeout(() => {
-                document.getElementById('message-input').focus();
-            }, 300);
-
-            // Load messages
-            loadMessages(conversationId);
-        }
-
-        // Function to get conversation info for a specific user
-        async function getOrCreateConversation(receiverId, receiverName) {
-            try {
-                const response = await fetch('api/get_or_create_conversation.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `receiver_id=${receiverId}`
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    return result.conversation_id;
-                }
-                return null;
-            } catch (error) {
-                console.error('Error getting conversation:', error);
-                return null;
-            }
-        }
-
-        // Handle URL parameters for auto-opening conversations
-        function handleUrlParameters() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const receiverId = urlParams.get('start_conversation');
-            const conversationId = urlParams.get('conversation_id');
-
-            if (receiverId || conversationId) {
-                // If we have a conversation ID, find and click it
-                if (conversationId) {
-                    const conversationItem = document.querySelector(`.conversation-item[data-conversation-id="${conversationId}"]`);
-                    if (conversationItem) {
-                        conversationItem.click();
-                        showChatArea();
-                    }
-                }
-                // If we only have a user ID, try to find existing conversation
-                else if (receiverId) {
-                    const conversationItem = document.querySelector(`.conversation-item[data-other-user-id="${receiverId}"]`);
-                    if (conversationItem) {
-                        conversationItem.click();
-                        showChatArea();
-                    } else {
-                        // Show new chat modal with user pre-selected
-                        setTimeout(() => {
-                            const newChatBtn = document.getElementById('new-chat-btn');
-                            if (newChatBtn) {
-                                newChatBtn.click();
-
-                                setTimeout(() => {
-                                    const select = document.querySelector('select[name="receiver_id"]');
-                                    if (select) {
-                                        select.value = receiverId;
-                                    }
-                                }, 300);
-                            }
-                        }, 1000);
-                    }
-                }
-
-                // Clear URL parameters
-                const newUrl = window.location.pathname;
-                window.history.replaceState({}, document.title, newUrl);
-            }
-        }
-
-        // Call this on page load
-        setTimeout(handleUrlParameters, 1000);
-
-        async function loadMessages(conversationId) {
-            try {
-                console.log('Loading messages for conversation:', conversationId);
-                const response = await fetch(`api/get_message.php?conversation_id=${conversationId}`);
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch messages');
-                }
-
-                const messages = await response.json();
-                console.log('Loaded messages:', messages);
-
-                displayMessagesInContainer(messages, messagesContainer);
-                scrollToBottom();
-            } catch (error) {
-                console.error('Error loading messages:', error);
-                messagesContainer.innerHTML = `
-                        <div class="flex justify-center items-center h-full">
-                            <div class="text-center text-red-500">
-                                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                                <p>Failed to load messages</p>
-                            </div>
-                        </div>
-                    `;
-            }
-        }
-
-        function displayMessagesInContainer(messages, container) {
-            container.innerHTML = '';
-
-            if (!messages || messages.length === 0) {
-                container.innerHTML = `
-                        <div class="flex justify-center items-center h-full">
-                            <div class="text-center text-gray-500">
-                                <i class="fas fa-comments text-4xl mb-4"></i>
-                                <p>No messages yet. Start the conversation!</p>
-                            </div>
-                        </div>
-                    `;
-                return;
             }
 
-            let currentDate = '';
+            // ===== PUSHER REAL-TIME CHAT =====
+            let pusher = null;
+            let conversationChannel = null;
             const currentUserId = <?php echo $_SESSION['user_id']; ?>;
+            let currentConversationId = null;
+            let currentReceiverId = null;
+            let currentReceiverName = null;
 
-            messages.forEach(message => {
-                const messageDate = new Date(message.created_at).toDateString();
+            // Initialize Pusher
+            function initializePusher() {
+                console.log('🚀 Initializing Pusher for user:', currentUserId);
 
-                // Add date separator if needed
-                if (messageDate !== currentDate) {
-                    currentDate = messageDate;
-                    const dateDivider = document.createElement('div');
-                    dateDivider.className = 'date-divider';
-                    dateDivider.innerHTML = `<span>${formatMessageDate(message.created_at)}</span>`;
-                    container.appendChild(dateDivider);
+                try {
+                    pusher = new Pusher('585e3129f2fd92e29c0b', {
+                        cluster: 'ap1',
+                        forceTLS: true,
+                        authEndpoint: 'auth/pusher_auth.php',
+                        auth: {
+                            params: {
+                                user_id: currentUserId,
+                                username: '<?php echo $_SESSION['username'] ?? ''; ?>',
+                                timestamp: Date.now()
+                            },
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        },
+                        enableLogging: true,
+                        logToConsole: true
+                    });
+
+                    // Debug logging
+                    pusher.connection.bind('connecting', () => {
+                        console.log('🔄 Connecting to Pusher...');
+                    });
+
+                    pusher.connection.bind('connected', () => {
+                        console.log('✅ Pusher CONNECTED');
+                        console.log('📡 Socket ID:', pusher.connection.socket_id);
+                    });
+
+                    pusher.connection.bind('disconnected', () => {
+                        console.log('❌ Pusher DISCONNECTED');
+                    });
+
+                    pusher.connection.bind('error', (err) => {
+                        console.error('⚠️ Pusher ERROR:', err);
+                    });
+
+                } catch (error) {
+                    console.error('❌ Pusher initialization failed:', error);
+                }
+            }
+
+            // Subscribe to conversation channel
+            function subscribeToConversationChannel(conversationId) {
+                if (!conversationId) {
+                    console.error('No conversation ID provided');
+                    return;
                 }
 
-                const isSent = message.sender_id == currentUserId;
+                // Unsubscribe from previous channel
+                if (conversationChannel) {
+                    pusher.unsubscribe(conversationChannel.name);
+                    console.log('Unsubscribed from previous channel:', conversationChannel.name);
+                }
 
-                const messageRow = document.createElement('div');
-                messageRow.className = `message-row ${isSent ? 'sent' : 'received'}`;
+                const channelName = 'private-chat-' + conversationId;
+                console.log('📡 Attempting to subscribe to conversation channel:', channelName);
 
-                const time = new Date(message.created_at).toLocaleTimeString('en-US', {
+                try {
+                    conversationChannel = pusher.subscribe(channelName);
+
+                    conversationChannel.bind('pusher:subscription_succeeded', () => {
+                        console.log('✅ Successfully subscribed to conversation channel:', channelName);
+                    });
+
+                    conversationChannel.bind('pusher:subscription_error', (status) => {
+                        console.error('❌ Subscription FAILED for channel:', channelName, 'Status:', status);
+                    });
+
+                    conversationChannel.bind('new-message', (data) => {
+                        console.log('📨 NEW MESSAGE received via Pusher:', data);
+                        handleIncomingMessage(data);
+                    });
+
+                    // Handle typing indicators
+                    conversationChannel.bind('client-typing', (data) => {
+                        if (data.user_id != currentUserId) {
+                            if (data.typing) {
+                                showTypingIndicator(data.username);
+                            } else {
+                                hideTypingIndicator();
+                            }
+                        }
+                    });
+
+                } catch (error) {
+                    console.error('Error subscribing to conversation channel:', error);
+                }
+            }
+
+            // Handle incoming messages (from Pusher or polling)
+            function handleIncomingMessage(data) {
+                console.log('🔍 Processing incoming message:', data);
+
+                const isSentByCurrentUser = data.sender_id == currentUserId;
+
+                // Check if message is for the current conversation
+                if (currentConversationId && data.conversation_id == currentConversationId) {
+                    console.log('💬 Message is for current conversation');
+
+                    // Check if message already exists
+                    const existingMessage = document.querySelector(`[data-message-id="${data.message_id}"]`);
+                    if (existingMessage) {
+                        console.log('⚠️ Message already displayed, skipping');
+                        return;
+                    }
+
+                    // Check for temporary message with same content
+                    const tempMessages = document.querySelectorAll('[data-message-id^="temp-"]');
+                    let foundTemp = false;
+
+                    tempMessages.forEach(tempMsg => {
+                        const content = tempMsg.querySelector('.message-content');
+                        if (content && content.textContent.trim() === data.message.trim()) {
+                            // Update temp message with real ID
+                            tempMsg.setAttribute('data-message-id', data.message_id);
+                            foundTemp = true;
+                            console.log('✅ Updated temp message with real ID');
+                        }
+                    });
+
+                    if (!foundTemp) {
+                        // Add message to messages array
+                        messages.push(data);
+                        // Add to chat UI
+                        addMessageToChat(data, !isSentByCurrentUser);
+                        scrollToBottom();
+                    }
+
+                    // Update conversation preview
+                    updateConversationPreview(data);
+
+                    // Update lastMessageId for polling
+                    lastMessageId = Math.max(lastMessageId, parseInt(data.message_id || data.id));
+
+                    // Play notification for received messages only
+                    if (!isSentByCurrentUser) {
+                        playNotificationSound();
+                        showMessageNotification(data);
+                    }
+
+                } else {
+                    // Message for different conversation
+                    console.log('🔔 Message for different conversation');
+                    updateConversationPreview(data);
+
+                    if (!isSentByCurrentUser) {
+                        showMessageNotification(data);
+                        playNotificationSound();
+                    }
+                }
+            }
+
+            // ===== MESSAGE DISPLAY FUNCTIONS =====
+            function addMessageToChat(messageData, isReceived) {
+                const messagesContainer = document.getElementById('messages-container');
+                if (!messagesContainer) return;
+
+                // Format time
+                const time = new Date(messageData.created_at).toLocaleTimeString('en-US', {
                     hour: 'numeric',
                     minute: '2-digit',
                     hour12: true
                 });
 
+                // Get avatar content
+                const avatarContent = !isReceived ?
+                    '<?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>' :
+                    (currentReceiverName ? currentReceiverName.substring(0, 1).toUpperCase() : 'U');
+
+                // Create message element
+                const messageRow = document.createElement('div');
+                messageRow.className = `message-row ${!isReceived ? 'sent' : 'received'}`;
+                messageRow.setAttribute('data-message-id', messageData.message_id || messageData.id);
+
                 messageRow.innerHTML = `
-                        ${!isSent ? `
-                            <div class="message-avatar">
-                                ${currentReceiverName ? currentReceiverName.substring(0, 1).toUpperCase() : 'U'}
-                            </div>
-                        ` : ''}
-                        
-                        <div class="message-bubble ${isSent ? 'sent' : 'received'}">
-                            <div class="message-content">${escapeHtml(message.message)}</div>
-                            <div class="message-time">${time}</div>
-                        </div>
-                        
-                        ${isSent ? `
-                            <div class="message-avatar">
-                                <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
-                            </div>
-                        ` : ''}
-                    `;
+            ${isReceived ? `
+                <div class="message-avatar">
+                    ${avatarContent}
+                </div>
+            ` : ''}
+            
+            <div class="message-bubble ${!isReceived ? 'sent' : 'received'}">
+                <div class="message-content">${escapeHtml(messageData.message)}</div>
+                <div class="message-time">${time}</div>
+            </div>
+            
+            ${!isReceived ? `
+                <div class="message-avatar">
+                    <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
+                </div>
+            ` : ''}
+        `;
 
-                container.appendChild(messageRow);
-            });
-
-            scrollToBottom();
-        }
-
-        function formatMessageDate(dateString) {
-            const date = new Date(dateString);
-            const today = new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
-
-            if (date.toDateString() === today.toDateString()) {
-                return 'Today';
-            } else if (date.toDateString() === yesterday.toDateString()) {
-                return 'Yesterday';
-            } else {
-                return date.toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'short',
-                    day: 'numeric'
-                });
+                messagesContainer.appendChild(messageRow);
             }
-        }
 
-        function scrollToBottom() {
-            if (messagesContainer) {
-                // Use setTimeout to ensure DOM is updated
+            // ===== CONVERSATION MANAGEMENT =====
+            function openChat(conversationId, receiverId, userName) {
+                currentConversationId = conversationId;
+                currentReceiverId = receiverId;
+                currentReceiverName = userName;
+
+                console.log('Setting up chat for:', userName);
+
+                // 1. Subscribe to Pusher channel
+                subscribeToConversationChannel(conversationId);
+
+                // 2. Start polling as backup
+                startPolling(conversationId);
+
+                // 3. Update UI
+                document.getElementById('chat-header-username').textContent = userName;
+                document.getElementById('chat-header-avatar').textContent = userName.substring(0, 2).toUpperCase();
+                document.getElementById('chat-header').classList.remove('hidden');
+
+                // 4. Enable message input
+                document.getElementById('message-input').disabled = false;
+                document.getElementById('send-message').disabled = false;
+
                 setTimeout(() => {
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                }, 50);
+                    document.getElementById('message-input').focus();
+                }, 300);
+
+                // 5. Load existing messages
+                loadMessages(conversationId);
             }
-        }
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+            async function loadMessages(conversationId) {
+                try {
+                    const response = await fetch(`api/get_message.php?conversation_id=${conversationId}`);
 
-        // Send message functionality
-        const sendMessageBtn = document.getElementById('send-message');
-        const messageInput = document.getElementById('message-input');
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch messages');
+                    }
 
-        if (sendMessageBtn && messageInput) {
-            sendMessageBtn.addEventListener('click', sendMessage);
-            messageInput.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') {
-                    sendMessage();
+                    const fetchedMessages = await response.json();
+
+                    // Store messages globally
+                    messages = fetchedMessages;
+
+                    // Update lastMessageId for polling
+                    if (messages.length > 0) {
+                        lastMessageId = Math.max(...messages.map(msg => parseInt(msg.id)));
+                        console.log(`Loaded ${messages.length} messages, lastMessageId: ${lastMessageId}`);
+                    }
+
+                    // Display messages
+                    displayMessagesInContainer(messages);
+                    scrollToBottom();
+
+                } catch (error) {
+                    console.error('Error loading messages:', error);
+                    const messagesContainer = document.getElementById('messages-container');
+                    if (messagesContainer) {
+                        messagesContainer.innerHTML = `
+                    <div class="flex justify-center items-center h-full">
+                        <div class="text-center text-red-500">
+                            <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                            <p>Failed to load messages</p>
+                        </div>
+                    </div>
+                `;
+                    }
                 }
-            });
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('message-input');
-            const message = input.value.trim();
-
-            if (!message || !currentConversationId) {
-                console.log('Cannot send message: missing message or conversation ID');
-                return;
             }
 
-            console.log('Sending message:', message);
+            function displayMessagesInContainer(messagesToDisplay) {
+                const container = document.getElementById('messages-container');
+                if (!container) return;
 
-            try {
-                const response = await fetch('api/send_message.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        message: message,
-                        conversation_id: currentConversationId,
-                        receiver_id: currentReceiverId
-                    })
-                });
+                container.innerHTML = '';
 
-                const result = await response.json();
-                console.log('Send message response:', result);
+                if (!messagesToDisplay || messagesToDisplay.length === 0) {
+                    container.innerHTML = `
+                <div class="flex justify-center items-center h-full">
+                    <div class="text-center text-gray-500">
+                        <i class="fas fa-comments text-4xl mb-4"></i>
+                        <p>No messages yet. Start the conversation!</p>
+                    </div>
+                </div>
+            `;
+                    return;
+                }
 
-                if (result.success) {
-                    input.value = '';
+                let currentDate = '';
+                const currentUserId = <?php echo $_SESSION['user_id']; ?>;
 
-                    // Add the new message immediately to the chat
+                messagesToDisplay.forEach(message => {
+                    const messageDate = new Date(message.created_at).toDateString();
+
+                    if (messageDate !== currentDate) {
+                        currentDate = messageDate;
+                        const dateDivider = document.createElement('div');
+                        dateDivider.className = 'date-divider';
+                        dateDivider.innerHTML = `<span>${formatMessageDate(message.created_at)}</span>`;
+                        container.appendChild(dateDivider);
+                    }
+
+                    const isSent = message.sender_id == currentUserId;
+
                     const messageRow = document.createElement('div');
-                    messageRow.className = 'message-row sent';
+                    messageRow.className = `message-row ${isSent ? 'sent' : 'received'}`;
+                    messageRow.setAttribute('data-message-id', message.id);
 
-                    const time = new Date().toLocaleTimeString('en-US', {
+                    const time = new Date(message.created_at).toLocaleTimeString('en-US', {
                         hour: 'numeric',
                         minute: '2-digit',
                         hour12: true
                     });
 
                     messageRow.innerHTML = `
-                            <div class="message-bubble sent">
-                                <div class="message-content">${escapeHtml(message)}</div>
-                                <div class="message-time">${time}</div>
-                            </div>
-                            <div class="message-avatar">
-                                <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
-                            </div>
-                        `;
+                ${!isSent ? `
+                    <div class="message-avatar">
+                        ${currentReceiverName ? currentReceiverName.substring(0, 1).toUpperCase() : 'U'}
+                    </div>
+                ` : ''}
+                
+                <div class="message-bubble ${isSent ? 'sent' : 'received'}">
+                    <div class="message-content">${escapeHtml(message.message)}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+                
+                ${isSent ? `
+                    <div class="message-avatar">
+                        <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
+                    </div>
+                ` : ''}
+            `;
 
+                    container.appendChild(messageRow);
+                });
+
+                scrollToBottom();
+            }
+
+            // ===== HELPER FUNCTIONS =====
+            function formatMessageDate(dateString) {
+                const date = new Date(dateString);
+                const today = new Date();
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+
+                if (date.toDateString() === today.toDateString()) {
+                    return 'Today';
+                } else if (date.toDateString() === yesterday.toDateString()) {
+                    return 'Yesterday';
+                } else {
+                    return date.toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                }
+            }
+
+            function scrollToBottom() {
+                const messagesContainer = document.getElementById('messages-container');
+                if (messagesContainer) {
+                    setTimeout(() => {
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    }, 50);
+                }
+            }
+
+            function escapeHtml(text) {
+                if (!text) return '';
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function updateConversationPreview(data) {
+                const conversationItem = document.querySelector(`.conversation-item[data-conversation-id="${data.conversation_id}"]`);
+                if (conversationItem) {
+                    // Update last message preview
+                    const previewElement = conversationItem.querySelector('.text-gray-600');
+                    if (previewElement) {
+                        const truncatedMessage = data.message.length > 50
+                            ? data.message.substring(0, 50) + '...'
+                            : data.message;
+                        previewElement.textContent = truncatedMessage;
+                    }
+
+                    // Update timestamp
+                    const timeElement = conversationItem.querySelector('.text-xs');
+                    if (timeElement) {
+                        try {
+                            const date = new Date(data.created_at);
+                            const now = new Date();
+
+                            let timeText;
+                            if (date.toDateString() === now.toDateString()) {
+                                timeText = date.toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                            } else if (date.getDate() === now.getDate() - 1) {
+                                timeText = 'Yesterday';
+                            } else {
+                                timeText = date.toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric'
+                                });
+                            }
+
+                            timeElement.textContent = timeText;
+                        } catch (e) {
+                            console.error('Error formatting date:', e);
+                            timeElement.textContent = 'Now';
+                        }
+                    }
+
+                    // Move to top if not current conversation
+                    if (data.conversation_id != currentConversationId) {
+                        const conversationsList = document.querySelector('.conversations-list');
+                        if (conversationsList && conversationItem.parentNode === conversationsList) {
+                            conversationsList.insertBefore(conversationItem, conversationsList.firstChild);
+                        }
+                    }
+                }
+            }
+
+            // ===== NOTIFICATION FUNCTIONS =====
+            function playNotificationSound() {
+                try {
+                    const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3');
+                    audio.volume = 0.3;
+                    audio.play().catch(e => console.log('Audio play failed:', e));
+                } catch (e) {
+                    console.log('Notification sound error:', e);
+                }
+            }
+
+            function showMessageNotification(data) {
+                if (currentConversationId && data.conversation_id == currentConversationId) {
+                    return;
+                }
+
+                // Browser notification
+                if ("Notification" in window && Notification.permission === "granted") {
+                    new Notification("New Message from " + data.sender_name, {
+                        body: data.message,
+                        icon: '/favicon.ico'
+                    });
+                }
+
+                // In-app notification
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-blue-500 text-white p-4 rounded-lg shadow-lg z-50 max-w-md notification';
+                notification.innerHTML = `
+            <div class="flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-comment text-white text-lg"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-semibold truncate">New message from ${data.sender_name}</p>
+                    <p class="text-sm opacity-90 truncate">${escapeHtml(data.message)}</p>
+                    <button class="mt-2 text-xs bg-white text-blue-500 px-2 py-1 rounded hover:bg-gray-100 transition-colors" onclick="openConversation(${data.conversation_id})">
+                        Open Chat
+                    </button>
+                </div>
+                <button class="flex-shrink-0 text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 5000);
+            }
+
+            window.openConversation = function (conversationId) {
+                const conversationItem = document.querySelector(`.conversation-item[data-conversation-id="${conversationId}"]`);
+                if (conversationItem) {
+                    conversationItem.click();
+                }
+            };
+
+            // ===== TYPING INDICATORS =====
+            function showTypingIndicator(username) {
+                const messagesContainer = document.getElementById('messages-container');
+                const existingTyping = document.querySelector('.typing-indicator');
+
+                if (!existingTyping) {
+                    const typingDiv = document.createElement('div');
+                    typingDiv.className = 'typing-indicator';
+                    typingDiv.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <div class="message-avatar w-8 h-8">
+                        ${username ? username.substring(0, 1).toUpperCase() : 'U'}
+                    </div>
+                    <div class="message-bubble received">
+                        <div class="typing-dots flex space-x-1">
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse animation-delay-200"></div>
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse animation-delay-400"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+                    messagesContainer.appendChild(typingDiv);
+                    scrollToBottom();
+                }
+            }
+
+            function hideTypingIndicator() {
+                const typingIndicator = document.querySelector('.typing-indicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+            }
+
+            // Add CSS for typing animation
+            const style = document.createElement('style');
+            style.textContent = `
+        @keyframes typing-pulse {
+            0%, 60%, 100% { opacity: 0.4; }
+            30% { opacity: 1; }
+        }
+        .animation-delay-200 { animation-delay: 0.2s; }
+        .animation-delay-400 { animation-delay: 0.4s; }
+        .typing-dots div {
+            animation: typing-pulse 1.4s infinite;
+        }
+    `;
+            document.head.appendChild(style);
+
+            // ===== INITIALIZATION =====
+
+            // Initialize Pusher
+            initializePusher();
+
+            // Request notification permission
+            if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+
+            // Auto-open conversation if coming from view-item.php
+            function autoOpenConversation() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const startConversation = urlParams.get('start_conversation');
+                const conversationId = urlParams.get('conversation_id');
+
+                if (startConversation || conversationId) {
+                    let targetConversationItem = null;
+
+                    if (conversationId) {
+                        targetConversationItem = document.querySelector(`.conversation-item[data-conversation-id="${conversationId}"]`);
+                    } else if (startConversation) {
+                        targetConversationItem = document.querySelector(`.conversation-item[data-other-user-id="${startConversation}"]`);
+                    }
+
+                    if (targetConversationItem) {
+                        console.log('Auto-opening conversation:', targetConversationItem);
+                        targetConversationItem.click();
+                        showChatArea();
+
+                        const initialMessage = <?php echo $item_context ? json_encode($item_context) : 'null'; ?>;
+                        if (initialMessage && document.getElementById('message-input')) {
+                            document.getElementById('message-input').value = initialMessage;
+                        }
+
+                        const newUrl = window.location.pathname;
+                        window.history.replaceState({}, document.title, newUrl);
+                    }
+                }
+            }
+
+            setTimeout(autoOpenConversation, 500);
+
+            // ===== DOM EVENT HANDLERS =====
+            const conversationsSidebar = document.getElementById('conversations-sidebar');
+            const chatArea = document.getElementById('chat-area');
+            const backToConversationsBtn = document.getElementById('back-to-conversations');
+            const newChatModal = document.getElementById('new-chat-modal');
+            const closeNewChatModal = document.getElementById('close-new-chat-modal');
+            const cancelNewChat = document.getElementById('cancel-new-chat');
+            const newChatBtn = document.getElementById('new-chat-btn');
+            const messageInput = document.getElementById('message-input');
+            const sendMessageBtn = document.getElementById('send-message');
+
+            // Mobile responsive functions
+            function showChatArea() {
+                if (window.innerWidth < 768) {
+                    conversationsSidebar.classList.add('mobile-hidden');
+                    chatArea.classList.add('mobile-active');
+                    backToConversationsBtn.style.display = 'flex';
+                    setTimeout(() => scrollToBottom(), 100);
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+
+            function showConversationsSidebar() {
+                if (window.innerWidth < 768) {
+                    conversationsSidebar.classList.remove('mobile-hidden');
+                    chatArea.classList.remove('mobile-active');
+                    backToConversationsBtn.style.display = 'none';
+                    document.body.style.overflow = '';
+                }
+            }
+
+            if (backToConversationsBtn) {
+                backToConversationsBtn.addEventListener('click', showConversationsSidebar);
+            }
+
+            // Conversation item click handlers
+            document.querySelectorAll('.conversation-item').forEach(item => {
+                item.addEventListener('click', function () {
+                    document.querySelectorAll('.conversation-item').forEach(i => {
+                        i.classList.remove('active');
+                    });
+
+                    this.classList.add('active');
+
+                    const conversationId = this.getAttribute('data-conversation-id');
+                    const receiverId = this.getAttribute('data-other-user-id');
+                    const userName = this.getAttribute('data-other-user-name');
+
+                    console.log('Opening conversation:', { conversationId, receiverId, userName });
+                    openChat(conversationId, receiverId, userName);
+                    showChatArea();
+                });
+            });
+
+            // ===== MESSAGE SENDING =====
+            async function sendMessage() {
+                if (!messageInput || !sendMessageBtn) return;
+
+                const message = messageInput.value.trim();
+
+                if (!message || !currentConversationId) {
+                    console.log('Cannot send message: missing message or conversation ID');
+                    return;
+                }
+
+                console.log('Sending message:', message);
+
+                // Optimistic UI update
+                const tempId = 'temp-' + Date.now();
+                const messageRow = document.createElement('div');
+                messageRow.className = 'message-row sent';
+                messageRow.setAttribute('data-message-id', tempId);
+
+                const time = new Date().toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                messageRow.innerHTML = `
+            <div class="message-bubble sent">
+                <div class="message-content">${escapeHtml(message)}</div>
+                <div class="message-time">${time}</div>
+            </div>
+            <div class="message-avatar">
+                <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
+            </div>
+        `;
+
+                const messagesContainer = document.getElementById('messages-container');
+                if (messagesContainer) {
                     messagesContainer.appendChild(messageRow);
                     scrollToBottom();
-
-                } else {
-                    alert('Error sending message: ' + (result.error || 'Unknown error'));
                 }
-            } catch (error) {
-                console.error('Error sending message:', error);
-                alert('Error sending message. Please try again.');
-            }
-        }
 
-        // User dropdown functionality - using CSS group hover instead
-        // This is already handled by Tailwind's group-hover classes in the HTML
+                // Disable input while sending
+                messageInput.disabled = true;
+                sendMessageBtn.disabled = true;
+                const originalBtnHtml = sendMessageBtn.innerHTML;
+                sendMessageBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-        // Handle window resize
-        window.addEventListener('resize', function () {
-            if (window.innerWidth >= 768) {
-                // On desktop, show both sidebar and chat area
-                conversationsSidebar.classList.remove('mobile-hidden');
-                chatArea.classList.remove('mobile-active');
-                backToConversationsBtn.style.display = 'none';
-                document.body.style.overflow = '';
-            } else if (!currentConversationId) {
-                // On mobile with no active conversation, show conversations
-                showConversationsSidebar();
+                try {
+                    const response = await fetch('api/send_message.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            conversation_id: currentConversationId,
+                            receiver_id: currentReceiverId
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    const responseText = await response.text();
+                    console.log('Raw response:', responseText);
+
+                    let result;
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (parseError) {
+                        console.error('Failed to parse JSON:', parseError);
+                        console.error('Response was:', responseText);
+                        throw new Error('Invalid server response');
+                    }
+
+                    console.log('Send message response:', result);
+
+                    if (result.success) {
+                        messageInput.value = '';
+
+                        // Update temporary message with real ID if available
+                        if (result.message_id) {
+                            const tempMessage = document.querySelector(`[data-message-id="${tempId}"]`);
+                            if (tempMessage) {
+                                tempMessage.setAttribute('data-message-id', result.message_id);
+                            }
+                        }
+
+                        // Update conversation preview
+                        updateConversationPreview({
+                            conversation_id: currentConversationId,
+                            message: message,
+                            created_at: new Date().toISOString(),
+                            sender_name: '<?php echo $_SESSION['username']; ?>'
+                        });
+
+                    } else {
+                        throw new Error(result.error || 'Unknown error');
+                    }
+                } catch (error) {
+                    console.error('Error sending message:', error);
+
+                    // Remove optimistic message if failed
+                    const tempMessage = document.querySelector(`[data-message-id="${tempId}"]`);
+                    if (tempMessage) {
+                        tempMessage.remove();
+                    }
+
+                    alert('Error sending message: ' + error.message);
+                } finally {
+                    // Re-enable input
+                    messageInput.disabled = false;
+                    sendMessageBtn.disabled = false;
+                    sendMessageBtn.innerHTML = originalBtnHtml;
+                    messageInput.focus();
+                }
             }
+
+            if (sendMessageBtn && messageInput) {
+                sendMessageBtn.addEventListener('click', sendMessage);
+                messageInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        sendMessage();
+                    }
+                });
+            }
+
+            // Typing detection
+            let isTyping = false;
+            let typingTimer = null;
+
+            if (messageInput) {
+                messageInput.addEventListener('input', function () {
+                    if (!isTyping) {
+                        isTyping = true;
+                        if (conversationChannel) {
+                            conversationChannel.trigger('client-typing', {
+                                user_id: currentUserId,
+                                username: '<?php echo $_SESSION['username']; ?>',
+                                typing: true
+                            });
+                        }
+                    }
+
+                    clearTimeout(typingTimer);
+                    typingTimer = setTimeout(function () {
+                        isTyping = false;
+                        if (conversationChannel) {
+                            conversationChannel.trigger('client-typing', {
+                                user_id: currentUserId,
+                                username: '<?php echo $_SESSION['username']; ?>',
+                                typing: false
+                            });
+                        }
+                    }, 1000);
+                });
+
+                messageInput.addEventListener('blur', function () {
+                    if (isTyping && conversationChannel) {
+                        isTyping = false;
+                        conversationChannel.trigger('client-typing', {
+                            user_id: currentUserId,
+                            username: '<?php echo $_SESSION['username']; ?>',
+                            typing: false
+                        });
+                    }
+                });
+            }
+
+            // Window resize handler
+            window.addEventListener('resize', function () {
+                if (window.innerWidth >= 768) {
+                    conversationsSidebar.classList.remove('mobile-hidden');
+                    chatArea.classList.remove('mobile-active');
+                    backToConversationsBtn.style.display = 'none';
+                    document.body.style.overflow = '';
+                } else if (!currentConversationId) {
+                    showConversationsSidebar();
+                }
+            });
+
+            console.log('Messages page ready with polling enabled');
         });
-
-        // Handle mobile back button (hardware back button)
-        window.addEventListener('popstate', function () {
-            if (window.innerWidth < 768 && currentConversationId) {
-                showConversationsSidebar();
-            }
-        });
-
-        console.log('Messages page ready');
-    });
-</script>
+    </script>
 </body>
 
 </html>

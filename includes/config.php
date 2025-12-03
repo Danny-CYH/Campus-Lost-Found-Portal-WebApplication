@@ -116,42 +116,54 @@ function sendVerificationEmail($to, $username, $token)
 // Pure PHP Pusher function without Composer
 function triggerPusher($channel, $event, $data)
 {
-    $url = "https://api-" . PUSHER_CLUSTER . ".pusher.com/apps/" . PUSHER_APP_ID . "/events";
+    $appId = PUSHER_APP_ID;
+    $appKey = PUSHER_KEY;
+    $appSecret = PUSHER_SECRET;
+    $cluster = PUSHER_CLUSTER;
 
-    $payload = [
+    $url = "https://api-$cluster.pusher.com/apps/$appId/events";
+
+    // Prepare payload
+    $payload = json_encode([
         'name' => $event,
-        'data' => $data,
+        'data' => json_encode($data), // data MUST be a JSON string
         'channel' => $channel
-    ];
+    ]);
 
-    $postData = json_encode($payload);
+    // Required Pusher authentication fields
+    $authTimestamp = time();
+    $authVersion = '1.0';
+    $bodyMd5 = md5($payload);
 
-    // Use HTTP Basic Authentication as required by Pusher
-    $headers = [
-        'Content-Type: application/json',
-        'X-Pusher-Library: pusher-http-php 7.2.0'
-    ];
+    // Create query string
+    $query = "auth_key=$appKey&auth_timestamp=$authTimestamp&auth_version=$authVersion&body_md5=$bodyMd5";
 
+    // Create signature
+    $stringToSign = "POST\n/apps/$appId/events\n$query";
+    $authSignature = hash_hmac('sha256', $stringToSign, $appSecret);
+
+    // Final URL with signature
+    $signedUrl = "$url?$query&auth_signature=$authSignature";
+
+    // cURL request
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_URL, $signedUrl);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json'
+    ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-
-    // Use HTTP Basic Auth with key:secret
-    curl_setopt($ch, CURLOPT_USERPWD, PUSHER_KEY . ":" . PUSHER_SECRET);
 
     $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
+
     curl_close($ch);
 
-    // Log the result for debugging
-    error_log("Pusher API Response - HTTP Code: {$httpCode}, Response: {$response}, Error: {$error}");
+    error_log("Pusher Response: HTTP $status - $response - Error: $error");
 
-    return $httpCode === 200;
+    return $status === 200;
 }
+
 ?>
