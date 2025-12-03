@@ -57,9 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function filterItems() {
         showLoading();
 
-        // Small delay to allow UI to show spinner
         setTimeout(() => {
-            // Get all items freshly from the DOM
             const allItems = Array.from(document.querySelectorAll('.item-card'));
 
             // A. FILTER
@@ -73,45 +71,69 @@ document.addEventListener('DOMContentLoaded', function () {
             // B. SORT
             sortMatchingItems(matchingItems);
 
-            // C. PAGINATION LOGIC
+            // C. PAGINATION
             const totalItems = matchingItems.length;
             const totalPages = Math.ceil(totalItems / currentState.itemsPerPage) || 1;
 
-            // Fix page number bounds
             if (currentState.page > totalPages) currentState.page = 1;
             if (currentState.page < 1) currentState.page = 1;
 
             const startIndex = (currentState.page - 1) * currentState.itemsPerPage;
             const endIndex = startIndex + currentState.itemsPerPage;
 
-            // D. RENDER
-            // First hide ALL items
+            // D. RENDER & LAYOUT SWITCHING
+            // 1. Reset Grid/List Container classes
+            if (currentState.view === 'list') {
+                itemsGrid.classList.remove('sm:grid-cols-2', 'lg:grid-cols-3', 'xl:grid-cols-4');
+                itemsGrid.classList.add('grid-cols-1');
+            } else {
+                itemsGrid.classList.add('sm:grid-cols-2', 'lg:grid-cols-3', 'xl:grid-cols-4');
+                itemsGrid.classList.remove('grid-cols-1');
+            }
+
+            // 2. Hide all first
             allItems.forEach(item => item.style.display = 'none');
 
-            // Show only the slice for current page
+            // 3. Show current page items and apply specific Card Styles
             matchingItems.slice(startIndex, endIndex).forEach(item => {
                 item.style.display = 'block';
-                // Apply Grid/List styling
+
+                const imgContainer = item.children[0]; // The div holding the image/icon
+
                 if (currentState.view === 'list') {
-                    item.classList.add('flex');
-                    item.classList.remove('flex-col');
+                    // === APPLY LIST STYLES ===
+                    // Card: Flex row (Image Left, Content Right)
+                    item.classList.add('flex', 'flex-col', 'sm:flex-row');
+
+                    if (imgContainer) {
+                        // Reset grid classes
+                        imgContainer.classList.remove('h-48');
+
+                        // ✅ FIX: Enforce Fixed Dimensions for Consistency
+                        // h-48 (Mobile height), sm:w-64 (Desktop Width), sm:h-48 (Desktop Height Fixed)
+                        // 'object-cover' on the img inside will handle the aspect ratio
+                        imgContainer.classList.add('h-48', 'sm:w-64', 'sm:h-48', 'shrink-0');
+                        imgContainer.classList.remove('sm:h-auto'); // Ensure auto is gone
+                    }
                 } else {
-                    item.classList.remove('flex');
-                    item.classList.add('flex-col');
+                    // === APPLY GRID STYLES ===
+                    item.classList.remove('flex', 'flex-col', 'sm:flex-row');
+
+                    if (imgContainer) {
+                        // Standard Grid: Fixed height 48, full width
+                        imgContainer.classList.add('h-48');
+                        imgContainer.classList.remove('sm:w-64', 'sm:h-48', 'shrink-0');
+                    }
                 }
             });
 
-            // Re-append to grid to visually reorder them based on sort
             if (itemsGrid) {
                 matchingItems.forEach(item => itemsGrid.appendChild(item));
             }
 
-            // Update UI elements
             updateResultsText(totalItems);
             updateActiveFiltersUI();
             updatePaginationUI(totalItems, totalPages);
-
-            // ✅ CRITICAL: Hide loading spinner
             hideLoading();
 
         }, 300);
@@ -236,6 +258,18 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updatePaginationUI(totalItems, totalPages) {
+        const paginationContainer = document.getElementById('pagination');
+
+        // 1. AUTO-HIDE LOGIC
+        // If there is only 1 page (or 0 items), hide the entire pagination bar
+        if (totalPages <= 1) {
+            if (paginationContainer) paginationContainer.classList.add('hidden');
+            return; // Stop here, no need to update buttons
+        } else {
+            if (paginationContainer) paginationContainer.classList.remove('hidden');
+        }
+
+        // 2. Standard Update Logic (Only runs if we have > 1 page)
         const startItem = totalItems === 0 ? 0 : (currentState.page - 1) * currentState.itemsPerPage + 1;
         const endItem = Math.min(currentState.page * currentState.itemsPerPage, totalItems);
 
@@ -252,19 +286,26 @@ document.addEventListener('DOMContentLoaded', function () {
             if (type === 'prev') {
                 btn.disabled = currentState.page <= 1;
                 btn.classList.toggle('opacity-50', currentState.page <= 1);
+                btn.classList.toggle('cursor-not-allowed', currentState.page <= 1);
             } else if (type === 'next') {
                 btn.disabled = currentState.page >= totalPages;
                 btn.classList.toggle('opacity-50', currentState.page >= totalPages);
+                btn.classList.toggle('cursor-not-allowed', currentState.page >= totalPages);
             } else {
-                // Number buttons (simplified logic: highlight if matches current page)
                 const pageNum = parseInt(type);
                 if (!isNaN(pageNum)) {
-                    if (pageNum === currentState.page) {
-                        btn.classList.add('bg-green-600', 'text-white');
-                        btn.classList.remove('bg-gray-100', 'text-gray-700');
+                    // Hide number buttons that are out of range (optional polish)
+                    if (pageNum > totalPages) {
+                        btn.style.display = 'none';
                     } else {
-                        btn.classList.remove('bg-green-600', 'text-white');
-                        btn.classList.add('bg-gray-100', 'text-gray-700');
+                        btn.style.display = 'inline-block';
+                        if (pageNum === currentState.page) {
+                            btn.classList.add('bg-uum-green', 'text-white');
+                            btn.classList.remove('bg-gray-100', 'text-gray-700');
+                        } else {
+                            btn.classList.remove('bg-uum-green', 'text-white');
+                            btn.classList.add('bg-gray-100', 'text-gray-700');
+                        }
                     }
                 }
             }

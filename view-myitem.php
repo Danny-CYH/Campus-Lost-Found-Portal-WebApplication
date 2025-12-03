@@ -214,10 +214,18 @@ if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'dashboa
                         <?php endif; ?>
 
                         <!-- 2. Delete Button -->
-                        <button onclick="deleteItem(<?php echo $item['id']; ?>)"
-                            class="flex items-center justify-center bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-md">
-                            <i class="fas fa-trash-alt mr-2"></i> Delete Item
-                        </button>
+                        <?php if ($is_returned == 0): ?>
+                            <!-- Active Delete Button (For Active Items) -->
+                            <button onclick="deleteItem(<?php echo $item['id']; ?>)"
+                                class="flex items-center justify-center bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-md">
+                                <i class="fas fa-trash-alt mr-2"></i> Delete Item
+                            </button>
+                        <?php else: ?>
+                            <!-- Disabled Delete Button (For Returned Items) -->
+                            <button disabled class="flex items-center justify-center bg-gray-300 text-gray-500 font-bold py-3 px-4 rounded-xl cursor-not-allowed" title="History items cannot be deleted">
+                                <i class="fas fa-trash-alt mr-2"></i> Delete Locked
+                            </button>
+                        <?php endif; ?>
 
                     </div>
 
