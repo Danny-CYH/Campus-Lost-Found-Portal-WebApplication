@@ -175,87 +175,84 @@ if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'dashboa
                     </div>
                 <?php endif; ?>
 
-                <?php if ($is_owner): ?>
-                    <div class="mt-8 flex gap-3">
-                        <?php if ($item['is_returned'] == 1): ?>
-                            <button disabled
-                                class="flex-1 bg-gray-400 cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl shadow-none opacity-70">
-                                <i class="fas fa-check-double mr-2"></i> Item Returned
-                            </button>
-                        <?php else: ?>
-                            <button onclick="markItemReturned(<?php echo $item['id']; ?>)"
-                                class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg shadow-green-600/30">
-                                <i class="fas fa-check mr-2"></i> Mark as Returned
-                            </button>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
+                <!-- ACTION BUTTONS SECTION -->
+                <div class="mt-auto pt-6 border-t border-gray-200 dark:border-gray-700">
 
-                <!-- Add this in view-item.php after the owner action buttons or before closing the main container -->
+                    <?php if ($is_owner): ?>
+                        <!-- CASE 1: OWNER VIEW -->
+                        <!-- Shows a disabled grey button. No green 'Returned' button here. -->
+                        <button disabled class="w-full bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-bold py-3 px-4 rounded-xl cursor-not-allowed flex items-center justify-center border border-gray-300 dark:border-gray-600">
+                            <i class="fas fa-user-tag mr-2"></i> This is your post
+                        </button>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                            Go to <a href="my-items.php" class="text-blue-500 hover:underline font-medium">My Items</a> to manage (Edit/Delete/Return).
+                        </p>
 
-                <?php if (!$is_owner && isset($_SESSION['user_id'])): ?>
-                    <?php
-                    // Check if a conversation already exists with this item owner
-                    $chat_stmt = $pdo->prepare("
-        SELECT c.id 
-        FROM conversations c 
-        WHERE (c.user1_id = ? AND c.user2_id = ?) 
-           OR (c.user1_id = ? AND c.user2_id = ?)
-        LIMIT 1
-    ");
-                    $chat_stmt->execute([$_SESSION['user_id'], $item['user_id'], $item['user_id'], $_SESSION['user_id']]);
-                    $existing_conversation = $chat_stmt->fetch(PDO::FETCH_ASSOC);
-                    ?>
+                    <?php elseif (isset($_SESSION['user_id'])): ?>
+                        <!-- CASE 2: LOGGED IN USER (NOT OWNER) -->
+                        <!-- Show Blue Message Button -->
+                        <?php
+                        // Check for existing conversation
+                        $existing_conversation = null;
+                        try {
+                            $chat_stmt = $pdo->prepare("
+                                SELECT c.id FROM conversations c 
+                                WHERE (c.user1_id = ? AND c.user2_id = ?) 
+                                   OR (c.user1_id = ? AND c.user2_id = ?)
+                                LIMIT 1
+                            ");
+                            $chat_stmt->execute([$_SESSION['user_id'], $item['user_id'], $item['user_id'], $_SESSION['user_id']]);
+                            $existing_conversation = $chat_stmt->fetch(PDO::FETCH_ASSOC);
+                        } catch (Exception $e) { /* Ignore chat errors */
+                        }
+                        ?>
 
-                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                         <a href="messages.php?start_conversation=<?php echo $item['user_id']; ?>&item_id=<?php echo $item_id; ?><?php echo isset($existing_conversation['id']) ? '&conversation_id=' . $existing_conversation['id'] : ''; ?>"
                             class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg shadow-blue-600/30 flex items-center justify-center">
                             <i class="fas fa-comments mr-3"></i>
-                            <?php echo isset($existing_conversation['id']) ? 'Continue Chat with ' : 'Message '; ?>
-                            <?php echo htmlspecialchars($item['username']); ?>
+                            <?php echo isset($existing_conversation['id']) ? 'Continue Chat' : 'Message Owner'; ?>
                         </a>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
-                            Chat about this item: "<?php echo htmlspecialchars($item['title']); ?>"
+                            Inquire about: "<?php echo htmlspecialchars($item['title']); ?>"
                         </p>
-                    </div>
-                <?php elseif (!isset($_SESSION['user_id'])): ?>
-                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <a href="login.php"
-                            class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg flex items-center justify-center">
-                            <i class="fas fa-sign-in-alt mr-3"></i> Login to Message the Owner
-                        </a>
-                    </div>
-                <?php endif; ?>
 
+                    <?php else: ?>
+                        <!-- CASE 3: GUEST USER -->
+                        <!-- Show Login Button -->
+                        <a href="auth/login.php" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg flex items-center justify-center">
+                            <i class="fas fa-sign-in-alt mr-3"></i> Login to Message Owner
+                        </a>
+                    <?php endif; ?>
+
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Footer sections -->
-<?php include 'includes/footer.php'; ?>
+    <!-- Footer sections -->
+    <?php include 'includes/footer.php'; ?>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="js/theme.js"></script>
-<script src="js/app.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/app.js"></script>
 
-<script>
-    // Initialize Map if coordinates exist
-    <?php if ($item['latitude'] && $item['longitude']): ?>
-        document.addEventListener('DOMContentLoaded', function () {
-            var map = L.map('view-map').setView([<?php echo $item['latitude']; ?>, <?php echo $item['longitude']; ?>], 16);
+    <script>
+        // Initialize Map if coordinates exist
+        <?php if ($item['latitude'] && $item['longitude']): ?>
+            document.addEventListener('DOMContentLoaded', function() {
+                var map = L.map('view-map').setView([<?php echo $item['latitude']; ?>, <?php echo $item['longitude']; ?>], 16);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
 
-            L.marker([<?php echo $item['latitude']; ?>, <?php echo $item['longitude']; ?>]).addTo(map)
-                .bindPopup("<b>Item Location</b><br><?php echo htmlspecialchars($item['location_name']); ?>")
-                .openPopup();
-        });
-    <?php endif; ?>
-</script>
+                L.marker([<?php echo $item['latitude']; ?>, <?php echo $item['longitude']; ?>]).addTo(map)
+                    .bindPopup("<b>Item Location</b><br><?php echo htmlspecialchars($item['location_name']); ?>")
+                    .openPopup();
+            });
+        <?php endif; ?>
+    </script>
 
-</body>
+    </body>
 
-</html>
+    </html>

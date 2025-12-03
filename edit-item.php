@@ -66,7 +66,20 @@ $locations_data = [
     "Varsity Mall" => ["lat" => 6.46288196027126, "lng" => 100.50094032818744],
 ];
 
-// 5. HANDLE FORM SUBMISSION (UPDATE)
+// 5. PARSE EXISTING LOCATION (Split "Name (Details)" back into two parts)
+$current_main_location = $item['location_name'];
+$current_location_details = "";
+
+// Regex to check if it fits the pattern "Location Name (Details)"
+if (preg_match('/^(.*?) \((.*)\)$/', $item['location_name'], $matches)) {
+    // Only split if the first part is actually in our list of locations
+    if (array_key_exists($matches[1], $locations_data)) {
+        $current_main_location = $matches[1];
+        $current_location_details = $matches[2];
+    }
+}
+
+// 6. HANDLE FORM SUBMISSION (UPDATE)
 if (isset($_POST['update_item_btn'])) {
 
     // Get Inputs
@@ -74,14 +87,26 @@ if (isset($_POST['update_item_btn'])) {
     $description = trim($_POST['description']);
     $category = $_POST['category'];
     $date_occurred = $_POST['date_occurred'];
-    $status = $_POST['status']; // User might change Lost to Found
+    $status = $_POST['status'];
     $secret_identifier = trim($_POST['secret_identifier']);
-    $location_name_to_save = trim($_POST['location_name']); // Assuming simple text for edit or dropdown logic
+
+    // --- NEW LOCATION LOGIC ---
+    $main_location = trim($_POST['location_name']);
+    $specific_spot = trim($_POST['location_details']);
+
+    // Combine them: "DKG 1 (Room 101)"
+    if (!empty($specific_spot)) {
+        $location_name_to_save = $main_location . " (" . $specific_spot . ")";
+    } else {
+        $location_name_to_save = $main_location;
+    }
+    // ---------------------------
+
     $latitude = !empty($_POST['latitude']) ? $_POST['latitude'] : null;
     $longitude = !empty($_POST['longitude']) ? $_POST['longitude'] : null;
 
     // Handle Image Update
-    $image_path = $item['image_path']; // Default to old image
+    $image_path = $item['image_path'];
 
     if (isset($_FILES['item_image']) && $_FILES['item_image']['error'] == 0) {
         $target_dir = "uploads/items/";
@@ -94,7 +119,7 @@ if (isset($_POST['update_item_btn'])) {
         $allowed_types = ['jpg', 'jpeg', 'png', 'gif'];
         if (in_array($imageFileType, $allowed_types)) {
             if (move_uploaded_file($_FILES["item_image"]["tmp_name"], $target_file)) {
-                $image_path = $target_file; // Update path
+                $image_path = $target_file;
             } else {
                 $msg = "Failed to upload new image.";
                 $msg_type = "error";
@@ -140,10 +165,20 @@ if (isset($_POST['update_item_btn'])) {
             if ($stmt->execute($params)) {
                 $msg = "Item updated successfully!";
                 $msg_type = "success";
-                // Refresh item data to show changes immediately
+                // Refresh item data
                 $stmt = $pdo->prepare("SELECT * FROM items WHERE id = ?");
                 $stmt->execute([$item_id]);
                 $item = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                // Re-parse location for display
+                $current_main_location = $item['location_name'];
+                $current_location_details = "";
+                if (preg_match('/^(.*?) \((.*)\)$/', $item['location_name'], $matches)) {
+                    if (array_key_exists($matches[1], $locations_data)) {
+                        $current_main_location = $matches[1];
+                        $current_location_details = $matches[2];
+                    }
+                }
             } else {
                 $msg = "Database Error: Could not update item.";
                 $msg_type = "error";
@@ -267,8 +302,24 @@ if (isset($_POST['update_item_btn'])) {
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Location Name</label>
-                        <input type="text" name="location_name" value="<?php echo htmlspecialchars($item['location_name']); ?>" required
+
+                        <!-- 1. The Dropdown -->
+                        <select name="location_name" id="location_input" required
                             class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-uum-green">
+                            <option value="">Select Location</option>
+                            <?php foreach ($locations_data as $name => $coords): ?>
+                                <option value="<?php echo htmlspecialchars($name); ?>"
+                                    <?php echo ($current_main_location == $name) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($name); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <!-- 2. The Details Input -->
+                        <input type="text" name="location_details"
+                            value="<?php echo htmlspecialchars($current_location_details); ?>"
+                            placeholder="Specific spot? (e.g. Level 2, Room 101)"
+                            class="w-full mt-3 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-uum-green text-sm">
                     </div>
                 </div>
 
@@ -324,7 +375,8 @@ if (isset($_POST['update_item_btn'])) {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Map
+            // 1. INITIALIZE MAP
+            // Get initial values or default to UUM center
             const lat = document.getElementById('latitude').value || 6.460195;
             const lng = document.getElementById('longitude').value || 100.505501;
 
@@ -336,17 +388,45 @@ if (isset($_POST['update_item_btn'])) {
                 draggable: true
             }).addTo(map);
 
+            // Update inputs when marker is dragged manually
             marker.on('dragend', function(event) {
                 const pos = marker.getLatLng();
                 document.getElementById('latitude').value = pos.lat;
                 document.getElementById('longitude').value = pos.lng;
             });
 
+            // Move marker on map click
             map.on('click', function(e) {
                 marker.setLatLng(e.latlng);
                 document.getElementById('latitude').value = e.latlng.lat;
                 document.getElementById('longitude').value = e.latlng.lng;
             });
+
+            // 2. LOCATION DROPDOWN LOGIC (Now inside the same function scope!)
+            const locationSelect = document.getElementById('location_input');
+            // Pass PHP array to JS
+            const locationsDB = <?php echo json_encode($locations_data); ?>;
+
+            if (locationSelect) {
+                locationSelect.addEventListener('change', function() {
+                    const selected = this.value;
+
+                    // Check if the selected location exists in our database
+                    if (selected && locationsDB[selected]) {
+                        const newLat = locationsDB[selected].lat;
+                        const newLng = locationsDB[selected].lng;
+
+                        // Move marker and map view
+                        const newLatLng = new L.LatLng(newLat, newLng);
+                        marker.setLatLng(newLatLng);
+                        map.setView(newLatLng, 16);
+
+                        // Update hidden inputs
+                        document.getElementById('latitude').value = newLat;
+                        document.getElementById('longitude').value = newLng;
+                    }
+                });
+            }
         });
     </script>
 </body>

@@ -368,7 +368,7 @@ if ($total_found_ever > 0) {
             </div>
 
             <div id="pagination"
-                class="flex flex-col sm:flex-row items-center justify-between mt-8 md:mt-12 pt-6 border-t border-gray-200 dark:border-gray-700">
+                class="hidden flex flex-col sm:flex-row items-center justify-between mt-8 md:mt-12 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <div class="text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-0">
                     Showing <span id="pagination-start">1</span> to <span id="pagination-end">12</span> of <span
                         id="pagination-total"><?php echo $total_active; ?></span> items
