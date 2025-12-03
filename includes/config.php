@@ -45,10 +45,10 @@ try {
 define('GMAPS_API_KEY', 'YOUR_GOOGLE_MAPS_API_KEY_HERE');
 
 // Local Site configuration
-define('SITE_URL', 'http://localhost/Project');
+//define('SITE_URL', 'http://localhost/Project');
 
 // Production site configuration
-// define('SITE_URL', 'https://campuslostfound.dramran.com/');
+define('SITE_URL', 'https://campuslostfound.dramran.com/');
 
 // Simple email function using PHP's mail() with proper headers
 function sendVerificationEmail($to, $username, $token)
