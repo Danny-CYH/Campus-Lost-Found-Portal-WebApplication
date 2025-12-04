@@ -42,6 +42,25 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Image preview
+    window.loadFile = function(event) {
+    var input = event.target;
+    var output = document.getElementById('preview_img');
+    var placeholder = document.getElementById('preview_placeholder');
+
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+
+        reader.onload = function(e) {
+            output.src = e.target.result;
+            output.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+        };
+
+        reader.readAsDataURL(input.files[0]);
+    }
+};
+
     // Password strength validation
     const passwordChecks = {
         length: document.getElementById('length-check'),

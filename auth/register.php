@@ -178,6 +178,49 @@ include '../includes/config.php';
                     <?php endif; ?>
 
                     <div class="space-y-4">
+                        
+                        <!-- Profile Image Field-->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-camera mr-2 text-uum-green"></i>
+                                Profile Image
+                            </label>
+
+                            <div class="flex items-center space-x-6">
+                                <div class="shrink-0 relative">
+                                    <img id="preview_img"
+                                        class="h-24 w-24 object-cover rounded-full border-4 border-uum-green/20 hidden shadow-md"
+                                        src="#"
+                                        alt="Profile preview" />
+
+                                    <div id="preview_placeholder"
+                                        class="h-24 w-24 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                                        <i class="fas fa-user text-3xl text-gray-400"></i>
+                                    </div>
+                                </div>
+
+                                <div class="w-full">
+                                    <label class="block">
+                                        <span class="sr-only">Choose profile photo</span>
+                                        <input id="profile_image"
+                                            name="profile_image"
+                                            type="file"
+                                            accept="image/*"
+                                            onchange="loadFile(event)"
+                                            class="block w-full text-sm text-gray-500 dark:text-gray-400
+                       file:mr-4 file:py-2.5 file:px-4
+                       file:rounded-xl file:border-0
+                       file:text-sm file:font-semibold
+                       file:bg-uum-green/10 file:text-uum-green
+                       hover:file:bg-uum-green/20
+                       bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl
+                       focus:outline-none focus:ring-2 focus:ring-uum-green focus:border-uum-green transition-all duration-200" />
+                                    </label>
+                                    <p class="text-xs text-gray-500 mt-2">Max size 5MB (JPG, PNG, WEBP)</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Username Field -->
                         <div>
                             <label for="username"
@@ -215,19 +258,6 @@ include '../includes/config.php';
                                 </div>
                             </div>
                             <p class="text-xs text-gray-500 mt-1">We'll send a verification email</p>
-                        </div>
-
-                        <!-- Profile Image Field-->
-                        <div>
-                            <label for="profile_image" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                <i class="fas fa-camera mr-2 text-uum-green"></i>
-                                Profile Image
-                            </label>
-                            <input id="profile_image" name="profile_image" type="file" accept="image/*"
-                                class="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-uum-green/10 file:text-uum-green
-                                hover:file:bg-uum-green/20 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl
-                                focus:outline-none focus:ring-2 focus:ring-uum-green focus:border-uum-green transition-all duration-200">
-                            <p class="text-xs text-gray-500 mt-1">Max size 5MB (JPG, PNG, WEBP)</p>
                         </div>
 
                         <!-- Gender Field -->
