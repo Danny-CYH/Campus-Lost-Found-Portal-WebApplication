@@ -160,7 +160,7 @@ include '../includes/config.php';
                 </div>
 
                 <!-- Registration Form -->
-                <form class="space-y-6" action="../api/process_register.php" method="POST">
+                <form class="space-y-6" action="../api/process_register.php" method="POST" enctype="multipart/form-data">
 
                     <!-- Error Display -->
                     <?php if (!empty($errors)): ?>
