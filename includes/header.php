@@ -1,13 +1,10 @@
 <?php
-// Function to check if current page matches nav link
+// 1. Helper Functions for Navigation
 function isActivePage($pageName)
 {
     $current_page = basename($_SERVER['PHP_SELF']);
-
-    // Remove query string if present
     $current_page = strtok($current_page, '?');
 
-    // Map page names to their file names
     $pageMap = [
         'index' => 'index.php',
         'lost-items' => 'lost-items.php',
@@ -22,14 +19,31 @@ function isActivePage($pageName)
     return isset($pageMap[$pageName]) && $current_page === $pageMap[$pageName];
 }
 
-// Function to get active class
 function getActiveClass($pageName)
 {
     return isActivePage($pageName) ? 'text-uum-green dark:text-uum-gold font-semibold border-b-2 border-uum-green' : '';
 }
 
-// Check if user is logged in
+// 2. Check Login Status
 $isLoggedIn = isset($_SESSION['user_id']);
+
+// 3. Fetch Profile Image
+$userProfileImage = 'default_avatar.png'; // Default fallback
+
+// Only query the database if the user is logged in AND $pdo exists
+if ($isLoggedIn && isset($pdo)) {
+    try {
+        $stmt = $pdo->prepare("SELECT profile_image FROM users WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        $row = $stmt->fetch();
+
+        if ($row && !empty($row['profile_image'])) {
+            $userProfileImage = $row['profile_image'];
+        }
+    } catch (PDOException $e) {
+        // Silent fail: keep using default_avatar.png if DB error occurs
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -111,10 +125,9 @@ $isLoggedIn = isset($_SESSION['user_id']);
                         <div class="relative group">
                             <button
                                 class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <div
-                                    class="w-8 h-8 bg-uum-green rounded-full flex items-center justify-center text-white font-semibold">
-                                    <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
-                                </div>
+                                <img src="uploads/profile_images/<?php echo htmlspecialchars($userProfileImage); ?>"
+                                    alt="Profile"
+                                    class="w-8 h-8 rounded-full object-cover border border-gray-200 shadow-sm">
                                 <span
                                     class="text-gray-700 dark:text-gray-300 hidden lg:block"><?php echo htmlspecialchars($_SESSION['username']); ?></span>
                                 <i class="fas fa-chevron-down text-gray-500 text-xs"></i>
@@ -128,7 +141,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
                                 </a>
                                 <a href="update-profile.php"
                                     class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                    <i class="fas fa-user-cog mr-3"></i>Update Profile
+                                    <i class="fas fa-user-cog mr-3"></i>Profile
                                 </a>
                                 <a href="messages.php"
                                     class="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -182,10 +195,9 @@ $isLoggedIn = isset($_SESSION['user_id']);
                         <!-- User Profile Section (Only show when logged in) -->
                         <div class="px-4 py-6 border-b border-gray-200 dark:border-gray-700">
                             <div class="flex items-center space-x-3">
-                                <div
-                                    class="w-12 h-12 bg-uum-green rounded-full flex items-center justify-center text-white font-semibold text-xl">
-                                    <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
-                                </div>
+                                <img src="uploads/profile_images/<?php echo htmlspecialchars($userProfileImage); ?>"
+                                    alt="Profile"
+                                    class="w-12 h-12 rounded-full object-cover border border-gray-200">
                                 <div>
                                     <p class="font-semibold text-gray-900 dark:text-white">
                                         <?php echo htmlspecialchars($_SESSION['username']); ?>
