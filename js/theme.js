@@ -2,6 +2,8 @@
 document.addEventListener('DOMContentLoaded', function () {
     const themeToggle = document.getElementById('theme-toggle');
     const themeIcon = document.getElementById('theme-icon');
+   
+     if (!themeToggle || !themeIcon) return;
 
     // Check for saved theme preference or default to 'light'
     const currentTheme = localStorage.getItem('theme') || 'light';

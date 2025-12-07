@@ -160,7 +160,7 @@ include '../includes/config.php';
                 </div>
 
                 <!-- Registration Form -->
-                <form class="space-y-6" action="../api/process_register.php" method="POST">
+                <form class="space-y-6" action="../api/process_register.php" method="POST" enctype="multipart/form-data">
 
                     <!-- Error Display -->
                     <?php if (!empty($errors)): ?>
@@ -178,6 +178,49 @@ include '../includes/config.php';
                     <?php endif; ?>
 
                     <div class="space-y-4">
+                        
+                        <!-- Profile Image Field-->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-camera mr-2 text-uum-green"></i>
+                                Profile Image
+                            </label>
+
+                            <div class="flex items-center space-x-6">
+                                <div class="shrink-0 relative">
+                                    <img id="preview_img"
+                                        class="h-24 w-24 object-cover rounded-full border-4 border-uum-green/20 hidden shadow-md"
+                                        src="#"
+                                        alt="Profile preview" />
+
+                                    <div id="preview_placeholder"
+                                        class="h-24 w-24 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                                        <i class="fas fa-user text-3xl text-gray-400"></i>
+                                    </div>
+                                </div>
+
+                                <div class="w-full">
+                                    <label class="block">
+                                        <span class="sr-only">Choose profile photo</span>
+                                        <input id="profile_image"
+                                            name="profile_image"
+                                            type="file"
+                                            accept="image/*"
+                                            onchange="loadFile(event)"
+                                            class="block w-full text-sm text-gray-500 dark:text-gray-400
+                       file:mr-4 file:py-2.5 file:px-4
+                       file:rounded-xl file:border-0
+                       file:text-sm file:font-semibold
+                       file:bg-uum-green/10 file:text-uum-green
+                       hover:file:bg-uum-green/20
+                       bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl
+                       focus:outline-none focus:ring-2 focus:ring-uum-green focus:border-uum-green transition-all duration-200" />
+                                    </label>
+                                    <p class="text-xs text-gray-500 mt-2">Max size 5MB (JPG, PNG, WEBP)</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Username Field -->
                         <div>
                             <label for="username"
@@ -215,6 +258,72 @@ include '../includes/config.php';
                                 </div>
                             </div>
                             <p class="text-xs text-gray-500 mt-1">We'll send a verification email</p>
+                        </div>
+
+                        <!-- Gender Field -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                <i class="fas fa-venus-mars mr-2 text-uum-green"></i>
+                                Gender
+                            </label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="relative flex cursor-pointer">
+                                    <input type="radio" name="gender" value="male" class="sr-only" <?php echo (isset($form_data['gender']) && $form_data['gender'] === 'male') ? 'checked' : ''; ?> required>
+                                    <div class="flex-1 text-center py-3 px-4 border-2 border-gray-300 dark:border-gray-600 rounded-xl transition-all duration-200 radio-card hover:border-uum-green/50">
+                                        <i class="fas fa-mars text-blue-500 text-lg mb-2"></i>
+                                        <div class="font-medium text-gray-700 dark:text-gray-300">Male</div>
+                                    </div>
+                                </label>
+                                <label class="relative flex cursor-pointer">
+                                    <input type="radio" name="gender" value="female" class="sr-only" <?php echo (isset($form_data['gender']) && $form_data['gender'] === 'female') ? 'checked' : ''; ?>>
+                                    <div class="flex-1 text-center py-3 px-4 border-2 border-gray-300 dark:border-gray-600 rounded-xl transition-all duration-200 radio-card hover:border-uum-green/50">
+                                        <i class="fas fa-venus text-pink-500 text-lg mb-2"></i>
+                                        <div class="font-medium text-gray-700 dark:text-gray-300">Female</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Academic School Field -->
+                        <div>
+                            <label for="school" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-university mr-2 text-uum-green"></i>
+                                Academic School
+                            </label>
+                            <div class="relative">
+                                <select id="school" name="school" required
+                                    class="w-full pl-4 pr-10 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-uum-green focus:border-uum-green transition-all duration-200 appearance-none">
+                                    <option value="" disabled selected>Select your school</option>
+                                    <?php
+                                    $schools = [
+                                        "Tunku Puteri Intan Safinaz School of Accountancy",
+                                        "School of Government",
+                                        "School of Quantitative Sciences",
+                                        "School of Business Management",
+                                        "School of International Studies",
+                                        "School of Applied Psychology, Social Work & Policy",
+                                        "School of Computing",
+                                        "Islamic Business School",
+                                        "School of Technology Management & Logistics",
+                                        "School of Creative Industry Management & Performing Arts",
+                                        "School of Economics, Finance & Banking",
+                                        "School of Education & Modern Languages",
+                                        "School of Languages, Civilisation & Philosophy",
+                                        "School of Law",
+                                        "School of Multimedia Technology & Communication",
+                                        "School of Tourism, Hospitality & Event Management",
+                                        "National Golf Academy"
+                                    ];
+                                    foreach ($schools as $school) {
+                                        $selected = (isset($form_data['school']) && $form_data['school'] === $school) ? 'selected' : '';
+                                        echo "<option value=\"" . htmlspecialchars($school) . "\" $selected>$school</option>";
+                                    }
+                                    ?>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
+                                    <i class="fas fa-chevron-down text-gray-400"></i>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Password Field -->
