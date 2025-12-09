@@ -28,6 +28,13 @@ define('EMAIL_FROM_NAME', 'UUM Campus Lost & Found');
 define('EMAIL_REPLY_TO', 'campuslostfound@dramran.com');
 define('EMAIL_SUBJECT_PREFIX', 'UUM Find - ');
 
+// Add these headers for PWA support
+if (!headers_sent()) {
+    header("Service-Worker-Allowed: /");
+    header("X-Frame-Options: SAMEORIGIN");
+    header("X-Content-Type-Options: nosniff");
+}
+
 // Start session if not already started
 if (session_status() == PHP_SESSION_NONE) {
     session_start();

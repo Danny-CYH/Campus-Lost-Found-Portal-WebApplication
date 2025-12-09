@@ -1,6 +1,6 @@
 <?php
 require_once 'includes/config.php';
-include 'includes/header.php';
+require_once 'includes/header.php';
 
 // Redirect if not logged in
 if (!isset($_SESSION['user_id'])) {
@@ -96,12 +96,40 @@ if (isset($_GET['start_conversation'])) {
 <html lang="en">
 
 <head>
+    <script>
+        // Force light mode by default
+        if (!document.cookie.includes('theme=')) {
+            document.documentElement.classList.add('light');
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
     <meta charset="UTF-8">
+    <html lang="en" class="light">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Campus Lost & Found</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // This enables class-based dark mode
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
         /* Modern Chat Styles */
         .messages-container {
@@ -455,10 +483,6 @@ if (isset($_GET['start_conversation'])) {
                             </p>
                         </div>
                     </div>
-                    <button id="new-chat-btn"
-                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium flex items-center shadow-md">
-                        <i class="fas fa-plus mr-2"></i> <span class="hidden sm:inline">New Chat</span>
-                    </button>
                 </div>
             </div>
         </div>
@@ -599,49 +623,7 @@ if (isset($_GET['start_conversation'])) {
         </div>
     </main>
 
-    <!-- New Chat Modal -->
-    <div id="new-chat-modal"
-        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="modal-content w-full max-w-md bg-white rounded-xl shadow-lg">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-semibold text-gray-900">Start New Chat</h3>
-                    <button id="close-new-chat-modal" class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-
-                <form id="new-chat-form">
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Select User to Chat With:
-                        </label>
-                        <select name="receiver_id"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            required>
-                            <option value="">Select a user...</option>
-                            <?php foreach ($all_users as $user): ?>
-                                <option value="<?php echo $user['id']; ?>">
-                                    <?php echo htmlspecialchars($user['username']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="flex justify-end space-x-3">
-                        <button type="button" id="cancel-new-chat"
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                            class="px-4 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-colors">
-                            Start Chat
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
+    <script src="js/theme.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // ===== GLOBAL VARIABLES FOR POLLING =====

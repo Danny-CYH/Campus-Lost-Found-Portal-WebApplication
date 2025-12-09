@@ -359,8 +359,7 @@ if (isset($_POST['report_item_btn'])) {
     <?php include 'includes/footer.php'; ?>
 
     <!-- SCRIPTS -->
-    <script src="js/theme.js"></script>
-    <script src="js/mobile-menu.js"></script>
+    <script src="../js/theme.js"></script>
 
     <!-- Leaflet JS (Map Logic) -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

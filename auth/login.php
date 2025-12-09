@@ -237,7 +237,7 @@ unset($_SESSION['login_success']);
                                 Username or Email
                             </label>
                             <div class="relative">
-                                <input id="username" name="username" type="text" required
+                                <input id="username" name="username" type="text" required autocomplete="off"
                                     value="<?php echo isset($form_data['username']) ? htmlspecialchars($form_data['username']) : ''; ?>"
                                     class="w-full pl-4 pr-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-uum-green focus:border-uum-green transition-all duration-200 <?php echo !empty($errors) ? 'border-red-300' : ''; ?>"
                                     placeholder="Enter your username or email">

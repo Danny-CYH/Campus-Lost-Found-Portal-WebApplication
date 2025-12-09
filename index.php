@@ -1,10 +1,29 @@
-<?php include 'includes/config.php'; ?>
-<?php include 'includes/header.php'; ?>
+<?php
+// index.php - CORRECT ORDER
+session_start(); // Session starts FIRST
+require_once 'includes/config.php';
+require_once 'includes/header.php';
+?>
 
 <!DOCTYPE html>
 <html lang="en" class="<?php echo isset($_COOKIE['theme']) ? $_COOKIE['theme'] : 'light'; ?>">
 
 <head>
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Basic PWA meta tags -->
+    <meta name="theme-color" content="#006837">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- iOS minimal support -->
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="icons/icon-192x192.png">
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UUM Campus Lost & Found Portal - Find Your Belongings</title>
@@ -35,9 +54,6 @@
                             gold: '#FFD700',
                             blue: '#0056b3'
                         }
-                    },
-                    animation: {
-                        'float': 'float 6s ease-in-out infinite',
                     }
                 }
             }
@@ -67,12 +83,13 @@
                         across our beautiful campus.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start">
-                        <?php if (isset($_SESSION['user_id'])) ?>
-                        <!-- Report Item Button (Desktop) -->
-                        <a href="report-item.php"
-                            class="bg-green-600 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl hidden md:flex items-center">
-                            <i class="fas fa-plus-circle mr-2"></i>Report Item
-                        </a>
+                        <?php if (isset($_SESSION['user_id'])): ?>
+                            <!-- Report Item Button (Desktop) -->
+                            <a href="report-item.php"
+                                class="bg-green-600 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl hidden md:flex items-center">
+                                <i class="fas fa-plus-circle mr-2"></i>Report Item
+                            </a>
+                        <?php endif; ?>
                     </div>
 
                     <div class="mt-8 md:mt-12 grid grid-cols-3 gap-4 md:gap-8 text-center">
@@ -505,12 +522,12 @@
 
             <div class="text-center mt-8 md:mt-12">
                 <?php if (isset($_SESSION['user_id'])): ?>
-                    <a href="dashboard.php"
+                    <a href="lost-items.php"
                         class="bg-gradient-to-r from-uum-green to-uum-blue hover:from-uum-blue hover:to-uum-green text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl inline-flex items-center justify-center">
                         <i class="fas fa-eye mr-2"></i>View All Items
                     </a>
                 <?php else: ?>
-                    <a href="lost-items.php"
+                    <a href="auth/login.php"
                         class="bg-gradient-to-r from-uum-green to-uum-blue hover:from-uum-blue hover:to-uum-green text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl inline-flex items-center justify-center">
                         <i class="fas fa-rocket mr-2"></i>View All Items
                     </a>
@@ -531,9 +548,9 @@
             </p>
             <div class="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
                 <?php if (isset($_SESSION['user_id'])): ?>
-                    <a href="dashboard.php"
+                    <a href="my-items.php"
                         class="bg-white text-uum-green hover:bg-gray-100 px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg transition-all duration-300 transform hover:scale-105 shadow-lg text-center">
-                        <i class="fas fa-tachometer-alt mr-2"></i>Go to Dashboard
+                        <i class="fas fa-tachometer-alt mr-2"></i>My Items
                     </a>
                 <?php else: ?>
                     <a href="auth/register.php"
@@ -551,6 +568,274 @@
 
     <!-- Footer sections -->
     <?php include 'includes/footer.php'; ?>
+
+    <script src="../js/theme.js"></script>
+
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                // Use relative path for service worker
+                navigator.serviceWorker.register('./sw.js')
+                    .then(function (registration) {
+                        console.log('✅ Service Worker registered successfully. Scope:', registration.scope);
+                        console.log('Service Worker state:', registration.installing ? 'installing' : 'active');
+
+                        // Force update check
+                        registration.update();
+
+                        // Check for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            console.log('🔄 New service worker found, state:', newWorker.state);
+
+                            newWorker.addEventListener('statechange', () => {
+                                console.log('Service Worker state changed to:', newWorker.state);
+                            });
+                        });
+                    })
+                    .catch(function (err) {
+                        console.error('❌ Service Worker registration failed:', err);
+                        console.error('Error details:', err.message);
+                    });
+            });
+        } else {
+            console.log('❌ Service Worker not supported');
+        }
+
+        let installButton = null;
+        let deferredPrompt = null;
+
+        function showInstallButton() {
+            // Don't show if already installed
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const isAlreadyInstalled = window.navigator.standalone || isStandalone;
+
+            if (isAlreadyInstalled) {
+                console.log('📱 App already installed');
+                return;
+            }
+
+            // Don't show if button already exists
+            if (document.getElementById('pwa-install-btn')) {
+                return;
+            }
+
+            // Create install button
+            installButton = document.createElement('button');
+            installButton.id = 'pwa-install-btn';
+            installButton.innerHTML = `
+    <div class="flex items-center space-x-2">
+        <div class="relative">
+            <i class="fas fa-download text-lg"></i>
+            <div class="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
+        </div>
+        <div class="text-left">
+            <div class="font-semibold">Install UUM App</div>
+            <div class="text-xs opacity-80">Fast & Offline Access</div>
+        </div>
+    </div>
+    `;
+
+            // Style the button
+            installButton.className = 'fixed bottom-6 right-6 z-50 ' +
+                'bg-gradient-to-r from-uum-green via-green-600 to-uum-blue ' +
+                'text-white px-5 py-3 rounded-xl shadow-2xl ' +
+                'font-medium text-sm flex items-center ' +
+                'transform hover:scale-105 transition-all duration-300 ' +
+                'install-btn-glow border-2 border-white/30 ' +
+                'backdrop-blur-sm';
+
+            // Add click handler
+            installButton.addEventListener('click', async () => {
+                if (!deferredPrompt) {
+                    console.log('No install prompt available');
+                    showInstallHint();
+                    return;
+                }
+
+                console.log('Showing install prompt...');
+
+                // Show the install prompt
+                deferredPrompt.prompt();
+
+                // Wait for the user to respond
+                try {
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log('User response:', outcome);
+
+                    if (outcome === 'accepted') {
+                        console.log('✅ User accepted install');
+                        showMessage('App installing...', 'success');
+                    } else {
+                        console.log('❌ User dismissed install');
+                        showMessage('Installation cancelled', 'info');
+                    }
+
+                    // Hide button
+                    if (installButton && installButton.parentNode) {
+                        installButton.remove();
+                    }
+
+                    deferredPrompt = null;
+                } catch (error) {
+                    console.error('Error during install:', error);
+                }
+            });
+
+            // Add close button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '<i class="fas fa-times text-xs"></i>';
+            closeBtn.className = 'absolute -top-2 -right-2 bg-gray-800 hover:bg-gray-900 text-white rounded-full w-6 h-6 flex
+            items - center justify - center';
+            closeBtn.title = 'Close';
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (installButton && installButton.parentNode) {
+                    installButton.remove();
+                }
+            });
+            installButton.appendChild(closeBtn);
+
+            // Add to page
+            document.body.appendChild(installButton);
+
+            console.log('✅ Install button shown');
+
+            // Auto-hide after 60 seconds
+            setTimeout(() => {
+                if (installButton && installButton.parentNode) {
+                    installButton.style.opacity = '0';
+                    installButton.style.transform = 'translateY(20px) scale(0.95)';
+                    setTimeout(() => {
+                        if (installButton && installButton.parentNode) {
+                            installButton.remove();
+                        }
+                    }, 300);
+                }
+            }, 60000);
+        }
+
+        // Helper function to show messages
+        function showMessage(text, type = 'info') {
+            const message = document.createElement('div');
+            message.textContent = text;
+
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500',
+                warning: 'bg-yellow-500'
+            };
+
+            message.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white ${colors[type] ||
+                colors.info}`;
+            message.style.animation = 'slideIn 0.3s ease-out';
+
+            document.body.appendChild(message);
+
+            setTimeout(() => {
+                message.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => {
+                    if (message.parentNode) message.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // Show hint if install not available
+        function showInstallHint() {
+            const hint = document.createElement('div');
+            hint.innerHTML = `
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 max-w-xs">
+        <div class="flex items-center mb-3">
+            <i class="fas fa-info-circle text-uum-green mr-2"></i>
+            <h4 class="font-semibold">Install Hint</h4>
+        </div>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
+            For manual installation:
+        </p>
+        <ol class="text-xs text-gray-500 dark:text-gray-400 space-y-1 mb-3">
+            <li>1. Click Chrome menu (3 dots)</li>
+            <li>2. Select "Install UUM Lost & Found"</li>
+            <li>3. Or wait for auto-prompt</li>
+        </ol>
+        <button onclick="this.parentElement.parentElement.remove()"
+            class="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 py-2 rounded-lg text-sm">
+            Got it
+        </button>
+    </div>
+    `;
+
+            hint.className = 'fixed bottom-24 right-6 z-50';
+            document.body.appendChild(hint);
+        }
+
+        // Check if PWA can be installed
+        function checkPWASupport() {
+            const isHTTPS = window.location.protocol === 'https:';
+            const isLocalhost = window.location.hostname === 'localhost' ||
+                window.location.hostname === '127.0.0.1';
+
+            if (!isHTTPS && !isLocalhost) {
+                console.warn('⚠️ PWA requires HTTPS in production');
+                showMessage('PWA requires HTTPS in production', 'warning');
+            }
+
+            // Listen for app installed event
+            window.addEventListener('appinstalled', (evt) => {
+                console.log('🎉 App was installed successfully!');
+                showMessage('App installed successfully!', 'success');
+            });
+        }
+
+        // Run checks on load
+        window.addEventListener('load', () => {
+            checkPWASupport();
+
+            // Check if already installed
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            if (isStandalone) {
+                console.log('📱 Running in installed PWA mode');
+                document.documentElement.classList.add('pwa-installed');
+            }
+        });
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+    @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+    }
+
+    @keyframes pulse-glow {
+    0%, 100% {
+    opacity: 1;
+    box-shadow: 0 10px 25px rgba(0, 104, 55, 0.4),
+    0 0 0 0 rgba(0, 104, 55, 0.7);
+    }
+    50% {
+    opacity: 0.9;
+    box-shadow: 0 15px 30px rgba(0, 104, 55, 0.6),
+    0 0 0 10px rgba(0, 104, 55, 0);
+    }
+    }
+
+    .install-btn-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    .pwa-installed body {
+    padding-top: env(safe-area-inset-top);
+    }
+    `;
+        document.head.appendChild(style);
+    </script>
 </body>
 
 </html>

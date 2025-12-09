@@ -1,7 +1,6 @@
 <?php
-// 1. DATABASE CONNECTION & AUTH
 require_once 'includes/config.php';
-require_once 'includes/header.php'; // Includes navbar
+require_once 'includes/header.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -198,11 +197,15 @@ if (isset($_POST['update_item_btn'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Item - UUM Find</title>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
     <script>

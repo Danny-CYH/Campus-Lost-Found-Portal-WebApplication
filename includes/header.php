@@ -24,7 +24,7 @@ function getActiveClass($pageName)
     return isActivePage($pageName) ? 'text-uum-green dark:text-uum-gold font-semibold border-b-2 border-uum-green' : '';
 }
 
-// 2. Check Login Status
+// 2. Check Login Status - Use the session that's already started
 $isLoggedIn = isset($_SESSION['user_id']);
 
 // 3. Fetch Profile Image
@@ -52,6 +52,27 @@ if ($isLoggedIn && isset($pdo)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        uum: {
+                            green: '#006837',
+                            gold: '#FFD700',
+                            blue: '#0056b3'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/mobile-menu.css">
@@ -170,173 +191,188 @@ if ($isLoggedIn && isset($pdo)) {
             </div>
         </div>
 
-        <!-- Mobile Menu (Off-canvas) -->
-        <div id="mobile-menu"
-            class="md:hidden fixed inset-y-0 right-0 w-full max-w-xs bg-white dark:bg-gray-800 shadow-xl transform translate-x-full transition-transform duration-300 ease-in-out z-50">
-            <div class="flex flex-col h-full">
-                <!-- Mobile Menu Header -->
-                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center space-x-3">
-                        <div
-                            class="w-10 h-10 bg-gradient-to-r from-uum-green to-uum-blue rounded-xl flex items-center justify-center">
-                            <i class="fas fa-search-location text-white"></i>
-                        </div>
-                        <span class="text-lg font-bold text-uum-green dark:text-uum-gold">UUM Find</span>
-                    </div>
+        <!-- Mobile Menu (Popup Modal) - FIXED POSITION -->
+        <div id="mobile-menu" class="md:hidden hidden">
+            <!-- Overlay -->
+            <div id="mobile-menu-overlay"
+                class="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 opacity-0"></div>
+
+            <!-- Modal Container - CENTERED -->
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <!-- Modal Content - WITH PROPER MARGINS -->
+                <div
+                    class="relative w-full max-w-md max-h-[85vh] overflow-y-auto bg-white dark:bg-gray-800 rounded-3xl shadow-2xl mx-auto my-auto">
+                    <!-- Close Button -->
                     <button id="close-mobile-menu" type="button"
-                        class="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-uum-green dark:hover:text-uum-gold">
+                        class="absolute top-4 right-4 z-10 p-3 rounded-full bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm text-gray-600 dark:text-gray-400 hover:text-uum-green dark:hover:text-uum-gold hover:bg-white dark:hover:bg-gray-700 transition-all duration-300 shadow-lg">
                         <i class="fas fa-times text-xl"></i>
                     </button>
-                </div>
 
-                <!-- Mobile Menu Content -->
-                <div class="flex-1 overflow-y-auto py-4">
-                    <?php if ($isLoggedIn): ?>
-                        <!-- User Profile Section (Only show when logged in) -->
-                        <div class="px-4 py-6 border-b border-gray-200 dark:border-gray-700">
-                            <div class="flex items-center space-x-3">
+                    <!-- Modal Header -->
+                    <div
+                        class="p-6 bg-gradient-to-r from-uum-green/10 to-uum-blue/10 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-12 h-12 bg-gradient-to-r from-uum-green to-uum-blue rounded-2xl flex items-center justify-center shadow-xl">
+                                <i class="fas fa-search-location text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-uum-green dark:text-uum-gold">UUM Find</h2>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Lost & Found Portal</p>
+                            </div>
+                        </div>
+
+                        <?php if ($isLoggedIn): ?>
+                            <!-- User Profile -->
+                            <div class="mt-4 flex items-center space-x-3">
                                 <img src="uploads/profile_images/<?php echo htmlspecialchars($userProfileImage); ?>"
                                     alt="Profile"
-                                    class="w-12 h-12 rounded-full object-cover border border-gray-200">
+                                    class="w-10 h-10 rounded-xl object-cover border-2 border-white dark:border-gray-700">
                                 <div>
                                     <p class="font-semibold text-gray-900 dark:text-white">
                                         <?php echo htmlspecialchars($_SESSION['username']); ?>
                                     </p>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">
-                                        <?php echo isset($_SESSION['email']) ? htmlspecialchars($_SESSION['email']) : 'Student/Staff'; ?>
+                                    <p class="text-xs text-gray-600 dark:text-gray-400">
+                                        <?php echo isset($_SESSION['email']) ? htmlspecialchars($_SESSION['email']) : 'UUM Member'; ?>
                                     </p>
                                 </div>
                             </div>
-                        </div>
-                    <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
 
-                    <!-- Navigation Links -->
-                    <div class="px-2 py-4">
-                        <div class="space-y-1">
-                            <!-- Always show these links -->
+                    <!-- Modal Body -->
+                    <div class="p-6">
+                        <!-- Navigation Grid -->
+                        <div class="grid grid-cols-3 gap-3 mb-6">
+                            <!-- Home -->
                             <a href="index.php"
-                                class="mobile-menu-item <?php echo isActivePage('index') ? 'mobile-menu-item-active' : ''; ?>">
-                                <i
-                                    class="fas fa-home <?php echo isActivePage('index') ? 'text-uum-green dark:text-uum-gold' : 'text-gray-600 dark:text-gray-400'; ?>"></i>
-                                <span>Home</span>
-                                <?php if (isActivePage('index')): ?>
-                                    <span
-                                        class="ml-auto w-2 h-2 bg-uum-green dark:bg-uum-gold rounded-full animate-pulse"></span>
-                                <?php endif; ?>
+                                class="modal-grid-item <?php echo isActivePage('index') ? 'modal-grid-item-active' : ''; ?>">
+                                <div
+                                    class="modal-grid-icon bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900 dark:to-green-800">
+                                    <i class="fas fa-home text-green-600 dark:text-green-400"></i>
+                                </div>
+                                <span class="modal-grid-label">Home</span>
                             </a>
+
+                            <!-- Lost Items -->
                             <a href="lost-items.php"
-                                class="mobile-menu-item <?php echo isActivePage('lost-items') ? 'mobile-menu-item-active' : ''; ?>">
-                                <i
-                                    class="fas fa-search <?php echo isActivePage('lost-items') ? 'text-uum-green dark:text-uum-gold' : 'text-gray-600 dark:text-gray-400'; ?>"></i>
-                                <span>Lost Items</span>
-                                <?php if (isActivePage('lost-items')): ?>
-                                    <span
-                                        class="ml-auto w-2 h-2 bg-uum-green dark:bg-uum-gold rounded-full animate-pulse"></span>
-                                <?php endif; ?>
+                                class="modal-grid-item <?php echo isActivePage('lost-items') ? 'modal-grid-item-active' : ''; ?>">
+                                <div
+                                    class="modal-grid-icon bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900 dark:to-blue-800">
+                                    <i class="fas fa-search text-blue-600 dark:text-blue-400"></i>
+                                </div>
+                                <span class="modal-grid-label">Lost Items</span>
                             </a>
+
+                            <!-- Found Items -->
                             <a href="found-items.php"
-                                class="mobile-menu-item <?php echo isActivePage('found-items') ? 'mobile-menu-item-active' : ''; ?>">
-                                <i
-                                    class="fas fa-hand-holding <?php echo isActivePage('found-items') ? 'text-uum-green dark:text-uum-gold' : 'text-gray-600 dark:text-gray-400'; ?>"></i>
-                                <span>Found Items</span>
-                                <?php if (isActivePage('found-items')): ?>
-                                    <span
-                                        class="ml-auto w-2 h-2 bg-uum-green dark:bg-uum-gold rounded-full animate-pulse"></span>
-                                <?php endif; ?>
+                                class="modal-grid-item <?php echo isActivePage('found-items') ? 'modal-grid-item-active' : ''; ?>">
+                                <div
+                                    class="modal-grid-icon bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-900 dark:to-purple-800">
+                                    <i class="fas fa-hand-holding text-purple-600 dark:text-purple-400"></i>
+                                </div>
+                                <span class="modal-grid-label">Found Items</span>
                             </a>
 
                             <?php if ($isLoggedIn): ?>
-                                <!-- Only show these when user is logged in -->
-                                <a href="my-items.php"
-                                    class="mobile-menu-item <?php echo isActivePage('my-items') ? 'mobile-menu-item-active' : ''; ?>">
-                                    <i
-                                        class="fas fa-box <?php echo isActivePage('my-items') ? 'text-uum-green dark:text-uum-gold' : 'text-gray-600 dark:text-gray-400'; ?>"></i>
-                                    <span>My Items</span>
-                                    <?php if (isActivePage('my-items')): ?>
-                                        <span
-                                            class="ml-auto w-2 h-2 bg-uum-green dark:bg-uum-gold rounded-full animate-pulse"></span>
-                                    <?php endif; ?>
-                                </a>
+                                <!-- Report Item -->
                                 <a href="report-item.php"
-                                    class="mobile-menu-item <?php echo isActivePage('report-item') ? 'mobile-menu-item-active' : ''; ?>">
-                                    <i
-                                        class="fas fa-plus-circle <?php echo isActivePage('report-item') ? 'text-uum-green dark:text-uum-gold' : 'text-gray-600 dark:text-gray-400'; ?>"></i>
-                                    <span>Report Item</span>
-                                    <?php if (isActivePage('report-item')): ?>
-                                        <span
-                                            class="ml-auto w-2 h-2 bg-uum-green dark:bg-uum-gold rounded-full animate-pulse"></span>
-                                    <?php endif; ?>
+                                    class="modal-grid-item <?php echo isActivePage('report-item') ? 'modal-grid-item-active' : ''; ?>">
+                                    <div
+                                        class="modal-grid-icon bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900 dark:to-red-800">
+                                        <i class="fas fa-plus-circle text-red-600 dark:text-red-400"></i>
+                                    </div>
+                                    <span class="modal-grid-label">Report</span>
                                 </a>
+
+                                <!-- My Items -->
+                                <a href="my-items.php"
+                                    class="modal-grid-item <?php echo isActivePage('my-items') ? 'modal-grid-item-active' : ''; ?>">
+                                    <div
+                                        class="modal-grid-icon bg-gradient-to-br from-yellow-100 to-yellow-50 dark:from-yellow-900 dark:to-yellow-800">
+                                        <i class="fas fa-box text-yellow-600 dark:text-yellow-400"></i>
+                                    </div>
+                                    <span class="modal-grid-label">My Items</span>
+                                </a>
+
+                                <!-- Messages -->
                                 <a href="messages.php"
-                                    class="mobile-menu-item <?php echo isActivePage('messages') ? 'mobile-menu-item-active' : ''; ?>">
-                                    <i
-                                        class="fas fa-comments <?php echo isActivePage('messages') ? 'text-uum-green dark:text-uum-gold' : 'text-gray-600 dark:text-gray-400'; ?>"></i>
-                                    <span>Messages</span>
-                                    <?php if (isActivePage('messages')): ?>
-                                        <span
-                                            class="ml-auto w-2 h-2 bg-uum-green dark:bg-uum-gold rounded-full animate-pulse"></span>
-                                    <?php endif; ?>
+                                    class="modal-grid-item <?php echo isActivePage('messages') ? 'modal-grid-item-active' : ''; ?>">
+                                    <div
+                                        class="modal-grid-icon bg-gradient-to-br from-pink-100 to-pink-50 dark:from-pink-900 dark:to-pink-800">
+                                        <i class="fas fa-comments text-pink-600 dark:text-pink-400"></i>
+                                    </div>
+                                    <span class="modal-grid-label">Messages</span>
                                 </a>
+
+                                <!-- Update Profile -->
                                 <a href="update-profile.php"
-                                    class="mobile-menu-item <?php echo isActivePage('update-profile') ? 'mobile-menu-item-active' : ''; ?>">
-                                    <i
-                                        class="fas fa-user-cog <?php echo isActivePage('update-profile') ? 'text-uum-green dark:text-uum-gold' : 'text-gray-600 dark:text-gray-400'; ?>"></i>
-                                    <span>Update Profile</span>
-                                    <?php if (isActivePage('update-profile')): ?>
-                                        <span
-                                            class="ml-auto w-2 h-2 bg-uum-green dark:bg-uum-gold rounded-full animate-pulse"></span>
-                                    <?php endif; ?>
+                                    class="modal-grid-item <?php echo isActivePage('update-profile') ? 'modal-grid-item-active' : ''; ?>">
+                                    <div
+                                        class="modal-grid-icon bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-900 dark:to-indigo-800">
+                                        <i class="fas fa-user-cog text-indigo-600 dark:text-indigo-400"></i>
+                                    </div>
+                                    <span class="modal-grid-label">Profile</span>
+                                </a>
+
+                                <!-- Theme Toggle -->
+                                <button id="mobile-theme-toggle" class="modal-grid-item">
+                                    <div
+                                        class="modal-grid-icon bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800">
+                                        <i class="fas fa-palette text-gray-600 dark:text-gray-400"></i>
+                                    </div>
+                                    <span class="modal-grid-label">Theme</span>
+                                </button>
+                            <?php else: ?>
+                                <!-- Login -->
+                                <a href="auth/login.php" class="modal-grid-item">
+                                    <div
+                                        class="modal-grid-icon bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900 dark:to-green-800">
+                                        <i class="fas fa-sign-in-alt text-green-600 dark:text-green-400"></i>
+                                    </div>
+                                    <span class="modal-grid-label">Login</span>
+                                </a>
+
+                                <!-- Register -->
+                                <a href="auth/register.php" class="modal-grid-item">
+                                    <div
+                                        class="modal-grid-icon bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900 dark:to-blue-800">
+                                        <i class="fas fa-user-plus text-blue-600 dark:text-blue-400"></i>
+                                    </div>
+                                    <span class="modal-grid-label">Register</span>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Action Button -->
+                        <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                            <?php if ($isLoggedIn): ?>
+                                <a href="auth/logout.php"
+                                    class="flex items-center justify-center w-full px-4 py-3 bg-gradient-to-r from-red-100 to-red-200 dark:from-red-900/20 dark:to-red-800/20 text-red-600 dark:text-red-400 rounded-xl hover:from-red-200 hover:to-red-300 dark:hover:from-red-900/30 dark:hover:to-red-800/30 transition-all duration-300 font-medium shadow-sm">
+                                    <i class="fas fa-sign-out-alt mr-3"></i>
+                                    <span>Logout from UUM Find</span>
                                 </a>
                             <?php else: ?>
-                                <!-- Show login/register when NOT logged in -->
                                 <a href="auth/login.php"
-                                    class="mobile-menu-item <?php echo isActivePage('login') ? 'mobile-menu-item-active' : ''; ?>">
-                                    <i
-                                        class="fas fa-sign-in-alt <?php echo isActivePage('login') ? 'text-uum-green dark:text-uum-gold' : 'text-gray-600 dark:text-gray-400'; ?>"></i>
-                                    <span>Login</span>
-                                </a>
-                                <a href="auth/register.php"
-                                    class="mobile-menu-item <?php echo isActivePage('register') ? 'mobile-menu-item-active' : ''; ?>">
-                                    <i
-                                        class="fas fa-user-plus <?php echo isActivePage('register') ? 'text-uum-green dark:text-uum-gold' : 'text-gray-600 dark:text-gray-400'; ?>"></i>
-                                    <span>Register</span>
+                                    class="flex items-center justify-center w-full px-4 py-3 bg-gradient-to-r from-uum-green to-uum-blue text-white rounded-xl hover:from-green-700 hover:to-blue-700 transition-all duration-300 font-medium shadow-lg">
+                                    <i class="fas fa-sign-in-alt mr-3"></i>
+                                    <span>Login to UUM Find</span>
                                 </a>
                             <?php endif; ?>
                         </div>
                     </div>
 
-                    <!-- Theme Toggle in Mobile Menu -->
-                    <div class="px-4 py-6 border-t border-gray-200 dark:border-gray-700">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-3">
-                                <i class="fas fa-palette text-gray-600 dark:text-gray-400"></i>
-                                <span class="text-gray-700 dark:text-gray-300">Theme</span>
-                            </div>
-                            <button id="mobile-theme-toggle" type="button"
-                                class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <i class="fas fa-moon text-gray-600 dark:text-uum-gold"></i>
-                                <span id="theme-status"
-                                    class="ml-2 text-sm text-gray-600 dark:text-gray-400">Light</span>
-                            </button>
+                    <!-- Modal Footer -->
+                    <div class="p-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                © <?php echo date('Y'); ?> UUM Lost & Found Portal
+                            </p>
+                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                Version 2.0
+                            </p>
                         </div>
                     </div>
-                </div>
-
-                <!-- Mobile Menu Footer -->
-                <div class="p-4 border-t border-gray-200 dark:border-gray-700">
-                    <?php if ($isLoggedIn): ?>
-                        <a href="auth/logout.php"
-                            class="flex items-center justify-center w-full px-4 py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
-                            <i class="fas fa-sign-out-alt mr-3"></i>
-                            <span class="font-medium">Logout</span>
-                        </a>
-                    <?php else: ?>
-                        <a href="auth/login.php"
-                            class="flex items-center justify-center w-full px-4 py-3 bg-uum-green text-white rounded-lg hover:bg-green-700 transition-colors">
-                            <i class="fas fa-sign-in-alt mr-3"></i>
-                            <span class="font-medium">Login to UUM Find</span>
-                        </a>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -347,5 +383,4 @@ if ($isLoggedIn && isset($pdo)) {
         </div>
     </nav>
 
-    <script src="../js/theme.js"></script>
-    <script src="../js/mobile-menu.js"></script>
+    <script src="js/theme.js"></script>
