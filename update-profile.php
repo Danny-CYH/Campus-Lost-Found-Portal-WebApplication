@@ -140,6 +140,8 @@ if (isset($_POST['remove_image'])) {
 <!DOCTYPE html>
 <html lang="en" class="<?php echo isset($_COOKIE['theme']) ? $_COOKIE['theme'] : 'light'; ?>">
 
+<html lang="en" class="<?php echo isset($_COOKIE['theme']) ? $_COOKIE['theme'] : 'light'; ?>">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -161,6 +163,8 @@ if (isset($_POST['remove_image'])) {
         }
     </script>
 </head>
+
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
 
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
 
@@ -343,4 +347,5 @@ if (isset($_POST['remove_image'])) {
         }
     </script>
 </body>
+
 </html>
