@@ -31,7 +31,8 @@ try {
 
     // Get messages - FIXED: Updated for your table structure
     $stmt = $pdo->prepare("
-        SELECT m.*, u.username as sender_username 
+        SELECT m.*, u.username as sender_username,
+        u.profile_image as sender_profile_image
         FROM messages m 
         JOIN users u ON m.sender_id = u.id 
         WHERE m.conversation_id = ? 

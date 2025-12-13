@@ -8,12 +8,19 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+// Get current user's profile image
+$user_id = $_SESSION['user_id']; // This was missing
+$stmt = $pdo->prepare("SELECT profile_image FROM users WHERE id = ?");
+$stmt->execute([$user_id]);
+$current_user = $stmt->fetch();
+$current_user_profile_image = $current_user['profile_image'] ?? null;
+
 // Get conversations for chat
-$user_id = $_SESSION['user_id'];
 $stmt = $pdo->prepare("
     SELECT c.*, 
            u.username, 
            u.id as other_user_id,
+           u.profile_image as other_user_profile_image,
            (SELECT message FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
            (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_time
     FROM conversations c
@@ -28,7 +35,7 @@ $stmt->execute([$user_id, $user_id, $user_id, $user_id]);
 $conversations = $stmt->fetchAll();
 
 // Get all users for new chat
-$stmt = $pdo->prepare("SELECT id, username FROM users WHERE id != ? ORDER BY username");
+$stmt = $pdo->prepare("SELECT id, username, profile_image FROM users WHERE id != ? ORDER BY username");
 $stmt->execute([$user_id]);
 $all_users = $stmt->fetchAll();
 
@@ -76,7 +83,6 @@ if (isset($_GET['start_conversation'])) {
             // Add initial message if we have item context
             if (isset($_GET['item_id'])) {
                 $item_context = htmlspecialchars("Hi! I'm interested in your item: " . $_GET['item_id']);
-                // You could fetch item title here for a better message
             }
         }
     }
@@ -96,25 +102,81 @@ if (isset($_GET['start_conversation'])) {
 <html lang="en">
 
 <head>
-    <script>
-        // Force light mode by default
-        if (!document.cookie.includes('theme=')) {
-            document.documentElement.classList.add('light');
-            document.documentElement.classList.remove('dark');
-        }
-    </script>
-
     <meta charset="UTF-8">
     <html lang="en" class="light">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Campus Lost & Found</title>
+    <link rel="stylesheet" href="css/chat.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 
+    <style>
+        .profile-image-container {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e5e7eb;
+            font-weight: bold;
+            color: #4b5563;
+        }
+
+        .profile-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #3b82f6;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .message-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .chat-header-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #3b82f6;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .chat-header-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+
     <script>
         tailwind.config = {
-            darkMode: 'class', // This enables class-based dark mode
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -129,339 +191,6 @@ if (isset($_GET['start_conversation'])) {
             }
         }
     </script>
-
-    <style>
-        /* Modern Chat Styles */
-        .messages-container {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            padding: 16px;
-            background: #f0f2f5;
-            height: 100%;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            /* Smooth scrolling on iOS */
-        }
-
-        .dark .messages-container {
-            background: #1a1a1a;
-        }
-
-        .message-row {
-            display: flex;
-            margin-bottom: 2px;
-        }
-
-        .message-row.sent {
-            justify-content: flex-end;
-        }
-
-        .message-row.received {
-            justify-content: flex-start;
-        }
-
-        .message-bubble {
-            max-width: 65%;
-            padding: 8px 12px;
-            border-radius: 18px;
-            word-wrap: break-word;
-            white-space: pre-wrap;
-            overflow-wrap: break-word;
-            position: relative;
-            line-height: 0.4;
-            font-size: 14px;
-        }
-
-        /* Sent messages (blue bubbles) */
-        .message-bubble.sent {
-            background: #0084ff;
-            color: white;
-            border-bottom-right-radius: 4px;
-            margin-left: auto;
-        }
-
-        /* Received messages (light gray bubbles) */
-        .message-bubble.received {
-            background: white;
-            color: #333;
-            border-bottom-left-radius: 4px;
-            margin-right: auto;
-        }
-
-        .dark .message-bubble.received {
-            background: #2d3748;
-            color: #e5e7eb;
-        }
-
-        /* Message time styling */
-        .message-time {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.7);
-            margin-top: 4px;
-            text-align: right;
-        }
-
-        .message-bubble.received .message-time {
-            color: rgba(0, 0, 0, 0.5);
-        }
-
-        .dark .message-bubble.received .message-time {
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        /* Avatar styling */
-        .message-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            margin: 0 8px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 600;
-            color: white;
-        }
-
-        /* Date divider */
-        .date-divider {
-            text-align: center;
-            margin: 16px 0;
-            position: relative;
-        }
-
-        .date-divider span {
-            background: rgba(0, 0, 0, 0.1);
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            color: #666;
-            border: none;
-        }
-
-        .dark .date-divider span {
-            background: rgba(255, 255, 255, 0.1);
-            color: #999;
-        }
-
-        /* Conversation list styles */
-        .conversation-item {
-            transition: all 0.2s ease;
-            border-left: 4px solid transparent;
-            cursor: pointer;
-        }
-
-        .conversation-item:hover {
-            background: #f8fafc;
-        }
-
-        .dark .conversation-item:hover {
-            background: #374151;
-        }
-
-        .conversation-item.active {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
-            border-left-color: #1e40af;
-            color: white;
-        }
-
-        .conversation-item.active .font-semibold,
-        .conversation-item.active .text-gray-900,
-        .conversation-item.active .text-gray-600,
-        .conversation-item.active .text-gray-500,
-        .conversation-item.active .text-gray-400 {
-            color: white !important;
-        }
-
-        .dark .conversation-item.active {
-            background: linear-gradient(135deg, #1e40af, #1e3a8a) !important;
-            border-left-color: #1d4ed8;
-        }
-
-        /* Chat input styles */
-        .chat-input-container {
-            background: white;
-            border-top: 1px solid #e5e7eb;
-            padding: 16px;
-            flex-shrink: 0;
-        }
-
-        .dark .chat-input-container {
-            background: #1f2937;
-            border-top-color: #374151;
-        }
-
-        /* Online indicator */
-        .online-indicator {
-            width: 8px;
-            height: 8px;
-            background: #10b981;
-            border-radius: 50%;
-            border: 2px solid white;
-        }
-
-        .dark .online-indicator {
-            border-color: #1f2937;
-        }
-
-        /* Mobile responsive styles */
-        .conversations-sidebar {
-            width: 100%;
-            height: 100%;
-        }
-
-        @media (min-width: 768px) {
-            .conversations-sidebar {
-                width: 35%;
-            }
-        }
-
-        .chat-area {
-            display: none;
-        }
-
-        @media (min-width: 768px) {
-            .chat-area {
-                display: flex;
-                width: 65%;
-            }
-        }
-
-        .chat-area.mobile-active {
-            display: flex;
-            width: 100%;
-            height: 100%;
-        }
-
-        .conversations-sidebar.mobile-hidden {
-            display: none;
-        }
-
-        /* Back button for mobile */
-        .back-to-conversations {
-            display: none;
-        }
-
-        @media (max-width: 767px) {
-            .back-to-conversations {
-                display: flex;
-            }
-        }
-
-        /* Fix for mobile scrolling */
-        .chat-layout-container {
-            height: calc(100vh - 140px);
-            overflow: hidden;
-        }
-
-        @media (max-width: 767px) {
-            .chat-layout-container {
-                height: calc(100vh - 120px);
-            }
-        }
-
-        .conversations-list {
-            flex: 1;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            height: calc(100% - 73px);
-        }
-
-        .chat-area-inner {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-            height: 100%;
-        }
-
-        .messages-wrapper {
-            flex: 1;
-            min-height: 0;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Improved mobile styles */
-        @media (max-width: 767px) {
-            body {
-                overflow-x: hidden;
-            }
-
-            .chat-layout-container {
-                border-radius: 0;
-                margin: -1rem;
-                width: calc(100% + 2rem);
-                max-width: none;
-            }
-
-            .messages-container {
-                padding: 12px 8px;
-            }
-
-            .message-bubble {
-                max-width: 75%;
-            }
-
-            .chat-input-container {
-                padding: 12px;
-            }
-
-            #message-input {
-                padding: 12px;
-                font-size: 16px;
-                /* Prevents iOS zoom on focus */
-            }
-
-            #send-message {
-                padding: 12px 16px;
-            }
-        }
-
-        /* Better scrolling on mobile */
-        .conversations-list::-webkit-scrollbar,
-        .messages-container::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .conversations-list::-webkit-scrollbar-track,
-        .messages-container::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .conversations-list::-webkit-scrollbar-thumb,
-        .messages-container::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 2px;
-        }
-
-        .dark .conversations-list::-webkit-scrollbar-thumb,
-        .dark .messages-container::-webkit-scrollbar-thumb {
-            background: #4b5563;
-        }
-
-        /* Notification styles */
-        .notification {
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    </style>
 </head>
 
 <body class="bg-gray-50 min-h-screen">
@@ -477,8 +206,8 @@ if (isset($_GET['start_conversation'])) {
                             <i class="fas fa-arrow-left text-xl"></i>
                         </button>
                         <div>
-                            <h1 class="text-2xl font-bold text-gray-900">Messages</h1>
-                            <p class="text-gray-600 mt-1 hidden md:block">
+                            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Messages</h1>
+                            <p class="text-gray-600 dark:text-white mt-1 hidden md:block">
                                 Chat with other users about lost and found items
                             </p>
                         </div>
@@ -509,16 +238,25 @@ if (isset($_GET['start_conversation'])) {
                         <div class="conversations-list">
                             <?php if (count($conversations) > 0): ?>
                                 <?php foreach ($conversations as $conv): ?>
-                                    <div class="conversation-item p-4 border-b border-gray-200"
+                                    <div class="conversation-item p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
                                         data-conversation-id="<?php echo $conv['id']; ?>"
                                         data-other-user-id="<?php echo $conv['other_user_id']; ?>"
-                                        data-other-user-name="<?php echo htmlspecialchars($conv['username']); ?>">
+                                        data-other-user-name="<?php echo htmlspecialchars($conv['username']); ?>"
+                                        data-other-user-profile-image="<?php echo htmlspecialchars($conv['other_user_profile_image'] ?? ''); ?>">
                                         <div class="flex items-center space-x-3">
                                             <div class="relative flex-shrink-0">
-                                                <div class="message-avatar w-12 h-12">
-                                                    <?php echo strtoupper(substr($conv['username'], 0, 2)); ?>
+                                                <div class="profile-image-container">
+                                                    <?php if (!empty($conv['other_user_profile_image'])): ?>
+                                                        <img src="uploads/profile_images/<?php echo htmlspecialchars($conv['other_user_profile_image']); ?>"
+                                                            alt="<?php echo htmlspecialchars($conv['username']); ?>"
+                                                            class="profile-image">
+                                                    <?php else: ?>
+                                                        <?php echo strtoupper(substr($conv['username'], 0, 2)); ?>
+                                                    <?php endif; ?>
                                                 </div>
-                                                <div class="absolute bottom-0 right-0 online-indicator"></div>
+                                                <div
+                                                    class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white">
+                                                </div>
                                             </div>
                                             <div class="flex-1 min-w-0">
                                                 <div class="flex items-center justify-between mb-1">
@@ -547,8 +285,7 @@ if (isset($_GET['start_conversation'])) {
                                 <div class="p-8 text-center">
                                     <i class="fas fa-comments text-gray-400 text-4xl mb-3"></i>
                                     <p class="text-gray-500">No conversations yet</p>
-                                    <p class="text-sm text-gray-400 mt-1">Start a chat to connect
-                                        with other users</p>
+                                    <p class="text-sm text-gray-400 mt-1">Start a chat to connect with other users</p>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -561,8 +298,12 @@ if (isset($_GET['start_conversation'])) {
                             <div id="chat-header" class="p-4 border-b border-gray-200 bg-white flex-shrink-0 hidden">
                                 <div class="flex items-center space-x-3">
                                     <div class="relative">
-                                        <div class="message-avatar w-10 h-10" id="chat-header-avatar"></div>
-                                        <div class="absolute bottom-0 right-0 online-indicator"></div>
+                                        <div class="chat-header-avatar" id="chat-header-avatar">
+                                            <!-- Profile image will be inserted here by JavaScript -->
+                                        </div>
+                                        <div
+                                            class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white">
+                                        </div>
                                     </div>
                                     <div class="flex-1">
                                         <h4 id="chat-header-username" class="font-semibold text-gray-900"></h4>
@@ -590,8 +331,8 @@ if (isset($_GET['start_conversation'])) {
                                         <div class="text-center">
                                             <i class="fas fa-comments text-4xl mb-4"></i>
                                             <p>Select a conversation to start chatting</p>
-                                            <p class="text-sm mt-2">Or start a new conversation using the button
-                                                above</p>
+                                            <p class="text-sm mt-2">Or start a new conversation using the button above
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -623,28 +364,49 @@ if (isset($_GET['start_conversation'])) {
         </div>
     </main>
 
-    <script src="js/theme.js"></script>
+    <script src="../js/theme.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // ===== GLOBAL VARIABLES FOR POLLING =====
-            let messages = []; // Store loaded messages
-            let lastMessageId = 0; // Track last message ID for polling
-            let pollingInterval = null; // Store polling interval
+            // ===== GLOBAL VARIABLES =====
+            let messages = [];
+            let lastMessageId = 0;
+            let pollingInterval = null;
+            let pusher = null;
+            let conversationChannel = null;
+            const currentUserId = <?php echo $_SESSION['user_id']; ?>;
+            const currentUserProfileImage = <?php echo json_encode($current_user_profile_image); ?>;
+            let currentConversationId = null;
+            let currentReceiverId = null;
+            let currentReceiverName = null;
+            let currentReceiverProfileImage = null;
+
+            // ===== PROFILE IMAGE FUNCTIONS =====
+            function getProfileImageElement(profileImage, username, size = 'medium') {
+                if (profileImage && profileImage !== 'null' && profileImage !== '') {
+                    return `<img src="uploads/profile_images/${profileImage}" alt="${username}" class="profile-image">`;
+                } else {
+                    const initials = username ? username.substring(0, 2).toUpperCase() : 'U';
+                    return initials;
+                }
+            }
+
+            function getProfileImageUrl(profileImage) {
+                if (profileImage && profileImage !== 'null' && profileImage !== '') {
+                    return `uploads/profiles/${profileImage}`;
+                }
+                return null;
+            }
 
             // ===== POLLING FUNCTIONS =====
             function startPolling(conversationId) {
-                stopPolling(); // Stop any existing polling
+                stopPolling();
 
-                // Set lastMessageId to the highest message ID
                 if (messages.length > 0) {
                     lastMessageId = Math.max(...messages.map(msg => parseInt(msg.id)));
                 } else {
                     lastMessageId = 0;
                 }
 
-                console.log(`🔁 Starting polling for conversation ${conversationId}, lastMessageId: ${lastMessageId}`);
-
-                // Start polling every 3 seconds
                 pollingInterval = setInterval(async () => {
                     await checkForNewMessages(conversationId);
                 }, 3000);
@@ -654,20 +416,15 @@ if (isset($_GET['start_conversation'])) {
                 if (pollingInterval) {
                     clearInterval(pollingInterval);
                     pollingInterval = null;
-                    console.log('🛑 Stopped message polling');
                 }
             }
 
             async function checkForNewMessages(conversationId) {
-                // Don't check if we're not in the right conversation
                 if (!conversationId || conversationId !== currentConversationId) {
-                    console.log('Polling skipped - wrong conversation');
                     return;
                 }
 
                 try {
-                    console.log(`🔍 Polling for new messages after ID: ${lastMessageId}`);
-
                     const response = await fetch(`api/check_new_messages.php?conversation_id=${conversationId}&after=${lastMessageId}&user_id=${currentUserId}`);
 
                     if (!response.ok) {
@@ -675,60 +432,48 @@ if (isset($_GET['start_conversation'])) {
                     }
 
                     const result = await response.json();
+                    console.log('Polling response:', result);
 
-                    if (result.success && result.new_messages && result.new_messages.length > 0) {
-                        console.log(`📨 Found ${result.new_messages.length} new messages via polling`);
+                    // Ensure messages is an array
+                    if (!Array.isArray(messages)) {
+                        messages = [];
+                    }
 
+                    if (result.success && result.new_messages && Array.isArray(result.new_messages)) {
                         result.new_messages.forEach(message => {
-                            // Skip messages that we sent (they're already displayed via Pusher/optimistic update)
                             if (message.sender_id == currentUserId) {
-                                console.log('Skipping own message from polling');
                                 return;
                             }
 
-                            // Check if message already exists
-                            const messageExists = messages.some(msg => msg.id == message.id);
+                            // Ensure messages array exists
+                            const messageExists = messages.some ? messages.some(msg => msg.id == message.id) : false;
                             const tempMessageExists = document.querySelector(`[data-message-id="temp-${message.id}"]`);
 
                             if (!messageExists && !tempMessageExists) {
-                                console.log('Adding new message from polling:', message.id);
                                 messages.push(message);
-                                addMessageToChat(message, true); // true = is received message
-
-                                // Update lastMessageId
+                                addMessageToChat(message, true);
                                 lastMessageId = Math.max(lastMessageId, parseInt(message.id));
                             }
                         });
 
-                        // Update conversation preview if we got new messages
                         if (result.new_messages.length > 0) {
                             const latestMessage = result.new_messages[result.new_messages.length - 1];
                             updateConversationPreview({
                                 conversation_id: conversationId,
                                 message: latestMessage.message,
                                 created_at: latestMessage.created_at,
-                                sender_name: latestMessage.sender_username || 'User'
+                                sender_name: latestMessage.sender_username || 'User',
+                                sender_profile_image: latestMessage.sender_profile_image || null
                             });
                         }
                     }
                 } catch (error) {
                     console.error('Polling error:', error);
-                    // Don't show alert, just log error
                 }
             }
 
             // ===== PUSHER REAL-TIME CHAT =====
-            let pusher = null;
-            let conversationChannel = null;
-            const currentUserId = <?php echo $_SESSION['user_id']; ?>;
-            let currentConversationId = null;
-            let currentReceiverId = null;
-            let currentReceiverName = null;
-
-            // Initialize Pusher
             function initializePusher() {
-                console.log('🚀 Initializing Pusher for user:', currentUserId);
-
                 try {
                     pusher = new Pusher('585e3129f2fd92e29c0b', {
                         cluster: 'ap1',
@@ -738,6 +483,7 @@ if (isset($_GET['start_conversation'])) {
                             params: {
                                 user_id: currentUserId,
                                 username: '<?php echo $_SESSION['username'] ?? ''; ?>',
+                                profile_image: currentUserProfileImage || '',
                                 timestamp: Date.now()
                             },
                             headers: {
@@ -748,18 +494,8 @@ if (isset($_GET['start_conversation'])) {
                         logToConsole: true
                     });
 
-                    // Debug logging
-                    pusher.connection.bind('connecting', () => {
-                        console.log('🔄 Connecting to Pusher...');
-                    });
-
                     pusher.connection.bind('connected', () => {
                         console.log('✅ Pusher CONNECTED');
-                        console.log('📡 Socket ID:', pusher.connection.socket_id);
-                    });
-
-                    pusher.connection.bind('disconnected', () => {
-                        console.log('❌ Pusher DISCONNECTED');
                     });
 
                     pusher.connection.bind('error', (err) => {
@@ -771,21 +507,17 @@ if (isset($_GET['start_conversation'])) {
                 }
             }
 
-            // Subscribe to conversation channel
             function subscribeToConversationChannel(conversationId) {
                 if (!conversationId) {
                     console.error('No conversation ID provided');
                     return;
                 }
 
-                // Unsubscribe from previous channel
                 if (conversationChannel) {
                     pusher.unsubscribe(conversationChannel.name);
-                    console.log('Unsubscribed from previous channel:', conversationChannel.name);
                 }
 
                 const channelName = 'private-chat-' + conversationId;
-                console.log('📡 Attempting to subscribe to conversation channel:', channelName);
 
                 try {
                     conversationChannel = pusher.subscribe(channelName);
@@ -794,20 +526,15 @@ if (isset($_GET['start_conversation'])) {
                         console.log('✅ Successfully subscribed to conversation channel:', channelName);
                     });
 
-                    conversationChannel.bind('pusher:subscription_error', (status) => {
-                        console.error('❌ Subscription FAILED for channel:', channelName, 'Status:', status);
-                    });
-
                     conversationChannel.bind('new-message', (data) => {
                         console.log('📨 NEW MESSAGE received via Pusher:', data);
                         handleIncomingMessage(data);
                     });
 
-                    // Handle typing indicators
                     conversationChannel.bind('client-typing', (data) => {
                         if (data.user_id != currentUserId) {
                             if (data.typing) {
-                                showTypingIndicator(data.username);
+                                showTypingIndicator(data.username, data.profile_image);
                             } else {
                                 hideTypingIndicator();
                             }
@@ -819,60 +546,42 @@ if (isset($_GET['start_conversation'])) {
                 }
             }
 
-            // Handle incoming messages (from Pusher or polling)
+            // ===== MESSAGE HANDLING =====
             function handleIncomingMessage(data) {
-                console.log('🔍 Processing incoming message:', data);
-
                 const isSentByCurrentUser = data.sender_id == currentUserId;
 
-                // Check if message is for the current conversation
                 if (currentConversationId && data.conversation_id == currentConversationId) {
-                    console.log('💬 Message is for current conversation');
-
-                    // Check if message already exists
                     const existingMessage = document.querySelector(`[data-message-id="${data.message_id}"]`);
                     if (existingMessage) {
-                        console.log('⚠️ Message already displayed, skipping');
                         return;
                     }
 
-                    // Check for temporary message with same content
                     const tempMessages = document.querySelectorAll('[data-message-id^="temp-"]');
                     let foundTemp = false;
 
                     tempMessages.forEach(tempMsg => {
                         const content = tempMsg.querySelector('.message-content');
                         if (content && content.textContent.trim() === data.message.trim()) {
-                            // Update temp message with real ID
                             tempMsg.setAttribute('data-message-id', data.message_id);
                             foundTemp = true;
-                            console.log('✅ Updated temp message with real ID');
                         }
                     });
 
                     if (!foundTemp) {
-                        // Add message to messages array
                         messages.push(data);
-                        // Add to chat UI
                         addMessageToChat(data, !isSentByCurrentUser);
                         scrollToBottom();
                     }
 
-                    // Update conversation preview
                     updateConversationPreview(data);
-
-                    // Update lastMessageId for polling
                     lastMessageId = Math.max(lastMessageId, parseInt(data.message_id || data.id));
 
-                    // Play notification for received messages only
                     if (!isSentByCurrentUser) {
                         playNotificationSound();
                         showMessageNotification(data);
                     }
 
                 } else {
-                    // Message for different conversation
-                    console.log('🔔 Message for different conversation');
                     updateConversationPreview(data);
 
                     if (!isSentByCurrentUser) {
@@ -882,70 +591,67 @@ if (isset($_GET['start_conversation'])) {
                 }
             }
 
-            // ===== MESSAGE DISPLAY FUNCTIONS =====
             function addMessageToChat(messageData, isReceived) {
                 const messagesContainer = document.getElementById('messages-container');
                 if (!messagesContainer) return;
 
-                // Format time
                 const time = new Date(messageData.created_at).toLocaleTimeString('en-US', {
                     hour: 'numeric',
                     minute: '2-digit',
                     hour12: true
                 });
 
-                // Get avatar content
-                const avatarContent = !isReceived ?
-                    '<?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>' :
-                    (currentReceiverName ? currentReceiverName.substring(0, 1).toUpperCase() : 'U');
-
-                // Create message element
                 const messageRow = document.createElement('div');
                 messageRow.className = `message-row ${!isReceived ? 'sent' : 'received'}`;
                 messageRow.setAttribute('data-message-id', messageData.message_id || messageData.id);
 
+                const senderProfileImage = isReceived ?
+                    (messageData.sender_profile_image || null) :
+                    currentUserProfileImage;
+
+                const senderName = isReceived ?
+                    (messageData.sender_username || currentReceiverName) :
+                    '<?php echo $_SESSION['username']; ?>';
+
                 messageRow.innerHTML = `
-            ${isReceived ? `
-                <div class="message-avatar">
-                    ${avatarContent}
-                </div>
-            ` : ''}
-            
-            <div class="message-bubble ${!isReceived ? 'sent' : 'received'}">
-                <div class="message-content">${escapeHtml(messageData.message)}</div>
-                <div class="message-time">${time}</div>
-            </div>
-            
-            ${!isReceived ? `
-                <div class="message-avatar">
-                    <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
-                </div>
-            ` : ''}
-        `;
+                    ${isReceived ? `
+                        <div class="message-avatar">
+                            ${getProfileImageElement(senderProfileImage, senderName)}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="message-bubble ${!isReceived ? 'sent' : 'received'}">
+                        <div class="message-content">${escapeHtml(messageData.message)}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                    
+                    ${!isReceived ? `
+                        <div class="message-avatar">
+                            ${getProfileImageElement(currentUserProfileImage, '<?php echo $_SESSION['username']; ?>')}
+                        </div>
+                    ` : ''}
+                `;
 
                 messagesContainer.appendChild(messageRow);
             }
 
             // ===== CONVERSATION MANAGEMENT =====
-            function openChat(conversationId, receiverId, userName) {
+            function openChat(conversationId, receiverId, userName, userProfileImage = null) {
                 currentConversationId = conversationId;
                 currentReceiverId = receiverId;
                 currentReceiverName = userName;
+                currentReceiverProfileImage = userProfileImage;
 
-                console.log('Setting up chat for:', userName);
-
-                // 1. Subscribe to Pusher channel
                 subscribeToConversationChannel(conversationId);
-
-                // 2. Start polling as backup
                 startPolling(conversationId);
 
-                // 3. Update UI
+                // Update chat header with profile image
+                const chatHeaderAvatar = document.getElementById('chat-header-avatar');
+                chatHeaderAvatar.innerHTML = getProfileImageElement(userProfileImage, userName);
+
                 document.getElementById('chat-header-username').textContent = userName;
-                document.getElementById('chat-header-avatar').textContent = userName.substring(0, 2).toUpperCase();
                 document.getElementById('chat-header').classList.remove('hidden');
 
-                // 4. Enable message input
                 document.getElementById('message-input').disabled = false;
                 document.getElementById('send-message').disabled = false;
 
@@ -953,30 +659,48 @@ if (isset($_GET['start_conversation'])) {
                     document.getElementById('message-input').focus();
                 }, 300);
 
-                // 5. Load existing messages
                 loadMessages(conversationId);
             }
 
             async function loadMessages(conversationId) {
                 try {
-                    const response = await fetch(`api/get_message.php?conversation_id=${conversationId}`);
+                    const response = await fetch(`api/get_message.php?conversation_id=${conversationId}&include_profile_images=true`);
 
                     if (!response.ok) {
-                        throw new Error('Failed to fetch messages');
+                        throw new Error(`Failed to fetch messages. Status: ${response.status}`);
                     }
 
-                    const fetchedMessages = await response.json();
+                    const result = await response.json();
+                    console.log('API response:', result);
 
-                    // Store messages globally
-                    messages = fetchedMessages;
+                    // Check if result is an array
+                    if (!Array.isArray(result)) {
+                        console.error('Invalid response format. Expected array but got:', result);
 
-                    // Update lastMessageId for polling
+                        // Initialize as empty array if invalid
+                        messages = [];
+
+                        const messagesContainer = document.getElementById('messages-container');
+                        if (messagesContainer) {
+                            messagesContainer.innerHTML = `
+                    <div class="flex justify-center items-center h-full">
+                        <div class="text-center text-yellow-600">
+                            <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                            <p>No messages found</p>
+                            <p class="text-sm">Start the conversation!</p>
+                        </div>
+                    </div>
+                `;
+                        }
+                        return;
+                    }
+
+                    messages = result;
+
                     if (messages.length > 0) {
                         lastMessageId = Math.max(...messages.map(msg => parseInt(msg.id)));
-                        console.log(`Loaded ${messages.length} messages, lastMessageId: ${lastMessageId}`);
                     }
 
-                    // Display messages
                     displayMessagesInContainer(messages);
                     scrollToBottom();
 
@@ -985,13 +709,17 @@ if (isset($_GET['start_conversation'])) {
                     const messagesContainer = document.getElementById('messages-container');
                     if (messagesContainer) {
                         messagesContainer.innerHTML = `
-                    <div class="flex justify-center items-center h-full">
-                        <div class="text-center text-red-500">
-                            <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                            <p>Failed to load messages</p>
-                        </div>
+                <div class="flex justify-center items-center h-full">
+                    <div class="text-center text-red-500">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p>Failed to load messages</p>
+                        <p class="text-sm">${error.message}</p>
+                        <button onclick="loadMessages(${currentConversationId})" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            Retry
+                        </button>
                     </div>
-                `;
+                </div>
+            `;
                     }
                 }
             }
@@ -1004,18 +732,17 @@ if (isset($_GET['start_conversation'])) {
 
                 if (!messagesToDisplay || messagesToDisplay.length === 0) {
                     container.innerHTML = `
-                <div class="flex justify-center items-center h-full">
-                    <div class="text-center text-gray-500">
-                        <i class="fas fa-comments text-4xl mb-4"></i>
-                        <p>No messages yet. Start the conversation!</p>
-                    </div>
-                </div>
-            `;
+                        <div class="flex justify-center items-center h-full">
+                            <div class="text-center text-gray-500">
+                                <i class="fas fa-comments text-4xl mb-4"></i>
+                                <p>No messages yet. Start the conversation!</p>
+                            </div>
+                        </div>
+                    `;
                     return;
                 }
 
                 let currentDate = '';
-                const currentUserId = <?php echo $_SESSION['user_id']; ?>;
 
                 messagesToDisplay.forEach(message => {
                     const messageDate = new Date(message.created_at).toDateString();
@@ -1040,24 +767,32 @@ if (isset($_GET['start_conversation'])) {
                         hour12: true
                     });
 
+                    const senderProfileImage = isSent ?
+                        currentUserProfileImage :
+                        (message.sender_profile_image || currentReceiverProfileImage);
+
+                    const senderName = isSent ?
+                        '<?php echo $_SESSION['username']; ?>' :
+                        (message.sender_username || currentReceiverName);
+
                     messageRow.innerHTML = `
-                ${!isSent ? `
-                    <div class="message-avatar">
-                        ${currentReceiverName ? currentReceiverName.substring(0, 1).toUpperCase() : 'U'}
-                    </div>
-                ` : ''}
-                
-                <div class="message-bubble ${isSent ? 'sent' : 'received'}">
-                    <div class="message-content">${escapeHtml(message.message)}</div>
-                    <div class="message-time">${time}</div>
-                </div>
-                
-                ${isSent ? `
-                    <div class="message-avatar">
-                        <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
-                    </div>
-                ` : ''}
-            `;
+                        ${!isSent ? `
+                            <div class="message-avatar">
+                                ${getProfileImageElement(senderProfileImage, senderName)}
+                            </div>
+                        ` : ''}
+                        
+                        <div class="message-bubble ${isSent ? 'sent' : 'received'}">
+                            <div class="message-content">${escapeHtml(message.message)}</div>
+                            <div class="message-time">${time}</div>
+                        </div>
+                        
+                        ${isSent ? `
+                            <div class="message-avatar">
+                                ${getProfileImageElement(currentUserProfileImage, '<?php echo $_SESSION['username']; ?>')}
+                            </div>
+                        ` : ''}
+                    `;
 
                     container.appendChild(messageRow);
                 });
@@ -1104,7 +839,6 @@ if (isset($_GET['start_conversation'])) {
             function updateConversationPreview(data) {
                 const conversationItem = document.querySelector(`.conversation-item[data-conversation-id="${data.conversation_id}"]`);
                 if (conversationItem) {
-                    // Update last message preview
                     const previewElement = conversationItem.querySelector('.text-gray-600');
                     if (previewElement) {
                         const truncatedMessage = data.message.length > 50
@@ -1113,7 +847,6 @@ if (isset($_GET['start_conversation'])) {
                         previewElement.textContent = truncatedMessage;
                     }
 
-                    // Update timestamp
                     const timeElement = conversationItem.querySelector('.text-xs');
                     if (timeElement) {
                         try {
@@ -1142,17 +875,26 @@ if (isset($_GET['start_conversation'])) {
                         }
                     }
 
-                    // Move to top if not current conversation
                     if (data.conversation_id != currentConversationId) {
                         const conversationsList = document.querySelector('.conversations-list');
                         if (conversationsList && conversationItem.parentNode === conversationsList) {
                             conversationsList.insertBefore(conversationItem, conversationsList.firstChild);
                         }
                     }
+
+                    // Update profile image if we have new data
+                    if (data.sender_profile_image && data.sender_id != currentUserId) {
+                        const profileImageContainer = conversationItem.querySelector('.profile-image-container');
+                        if (profileImageContainer) {
+                            profileImageContainer.innerHTML = getProfileImageElement(
+                                data.sender_profile_image,
+                                data.sender_name
+                            );
+                        }
+                    }
                 }
             }
 
-            // ===== NOTIFICATION FUNCTIONS =====
             function playNotificationSound() {
                 try {
                     const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3');
@@ -1168,34 +910,38 @@ if (isset($_GET['start_conversation'])) {
                     return;
                 }
 
-                // Browser notification
                 if ("Notification" in window && Notification.permission === "granted") {
                     new Notification("New Message from " + data.sender_name, {
                         body: data.message,
-                        icon: '/favicon.ico'
+                        icon: data.sender_profile_image ? `uploads/profiles/${data.sender_profile_image}` : '/favicon.ico'
                     });
                 }
 
-                // In-app notification
                 const notification = document.createElement('div');
                 notification.className = 'fixed top-4 right-4 bg-blue-500 text-white p-4 rounded-lg shadow-lg z-50 max-w-md notification';
+
+                const senderAvatar = getProfileImageElement(data.sender_profile_image, data.sender_name);
+
                 notification.innerHTML = `
-            <div class="flex items-start space-x-3">
-                <div class="flex-shrink-0">
-                    <i class="fas fa-comment text-white text-lg"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="font-semibold truncate">New message from ${data.sender_name}</p>
-                    <p class="text-sm opacity-90 truncate">${escapeHtml(data.message)}</p>
-                    <button class="mt-2 text-xs bg-white text-blue-500 px-2 py-1 rounded hover:bg-gray-100 transition-colors" onclick="openConversation(${data.conversation_id})">
-                        Open Chat
-                    </button>
-                </div>
-                <button class="flex-shrink-0 text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `;
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            ${senderAvatar.includes('<img') ?
+                        `<div class="w-10 h-10 rounded-full overflow-hidden">${senderAvatar}</div>` :
+                        `<div class="w-10 h-10 rounded-full bg-white text-blue-500 flex items-center justify-center font-bold">${senderAvatar}</div>`
+                    }
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-semibold truncate">New message from ${data.sender_name}</p>
+                            <p class="text-sm opacity-90 truncate">${escapeHtml(data.message)}</p>
+                            <button class="mt-2 text-xs bg-white text-blue-500 px-2 py-1 rounded hover:bg-gray-100 transition-colors" onclick="openConversation(${data.conversation_id})">
+                                Open Chat
+                            </button>
+                        </div>
+                        <button class="flex-shrink-0 text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
 
                 document.body.appendChild(notification);
 
@@ -1214,7 +960,7 @@ if (isset($_GET['start_conversation'])) {
             };
 
             // ===== TYPING INDICATORS =====
-            function showTypingIndicator(username) {
+            function showTypingIndicator(username, profileImage) {
                 const messagesContainer = document.getElementById('messages-container');
                 const existingTyping = document.querySelector('.typing-indicator');
 
@@ -1222,19 +968,19 @@ if (isset($_GET['start_conversation'])) {
                     const typingDiv = document.createElement('div');
                     typingDiv.className = 'typing-indicator';
                     typingDiv.innerHTML = `
-                <div class="flex items-center space-x-2">
-                    <div class="message-avatar w-8 h-8">
-                        ${username ? username.substring(0, 1).toUpperCase() : 'U'}
-                    </div>
-                    <div class="message-bubble received">
-                        <div class="typing-dots flex space-x-1">
-                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse animation-delay-200"></div>
-                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse animation-delay-400"></div>
+                        <div class="flex items-center space-x-2">
+                            <div class="message-avatar">
+                                ${getProfileImageElement(profileImage, username)}
+                            </div>
+                            <div class="message-bubble received">
+                                <div class="typing-dots flex space-x-1">
+                                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse animation-delay-200"></div>
+                                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse animation-delay-400"></div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            `;
+                    `;
                     messagesContainer.appendChild(typingDiv);
                     scrollToBottom();
                 }
@@ -1250,29 +996,25 @@ if (isset($_GET['start_conversation'])) {
             // Add CSS for typing animation
             const style = document.createElement('style');
             style.textContent = `
-        @keyframes typing-pulse {
-            0%, 60%, 100% { opacity: 0.4; }
-            30% { opacity: 1; }
-        }
-        .animation-delay-200 { animation-delay: 0.2s; }
-        .animation-delay-400 { animation-delay: 0.4s; }
-        .typing-dots div {
-            animation: typing-pulse 1.4s infinite;
-        }
-    `;
+                @keyframes typing-pulse {
+                    0%, 60%, 100% { opacity: 0.4; }
+                    30% { opacity: 1; }
+                }
+                .animation-delay-200 { animation-delay: 0.2s; }
+                .animation-delay-400 { animation-delay: 0.4s; }
+                .typing-dots div {
+                    animation: typing-pulse 1.4s infinite;
+                }
+            `;
             document.head.appendChild(style);
 
             // ===== INITIALIZATION =====
-
-            // Initialize Pusher
             initializePusher();
 
-            // Request notification permission
             if ("Notification" in window && Notification.permission === "default") {
                 Notification.requestPermission();
             }
 
-            // Auto-open conversation if coming from view-item.php
             function autoOpenConversation() {
                 const urlParams = new URLSearchParams(window.location.search);
                 const startConversation = urlParams.get('start_conversation');
@@ -1288,7 +1030,6 @@ if (isset($_GET['start_conversation'])) {
                     }
 
                     if (targetConversationItem) {
-                        console.log('Auto-opening conversation:', targetConversationItem);
                         targetConversationItem.click();
                         showChatArea();
 
@@ -1309,10 +1050,6 @@ if (isset($_GET['start_conversation'])) {
             const conversationsSidebar = document.getElementById('conversations-sidebar');
             const chatArea = document.getElementById('chat-area');
             const backToConversationsBtn = document.getElementById('back-to-conversations');
-            const newChatModal = document.getElementById('new-chat-modal');
-            const closeNewChatModal = document.getElementById('close-new-chat-modal');
-            const cancelNewChat = document.getElementById('cancel-new-chat');
-            const newChatBtn = document.getElementById('new-chat-btn');
             const messageInput = document.getElementById('message-input');
             const sendMessageBtn = document.getElementById('send-message');
 
@@ -1352,9 +1089,9 @@ if (isset($_GET['start_conversation'])) {
                     const conversationId = this.getAttribute('data-conversation-id');
                     const receiverId = this.getAttribute('data-other-user-id');
                     const userName = this.getAttribute('data-other-user-name');
+                    const userProfileImage = this.getAttribute('data-other-user-profile-image');
 
-                    console.log('Opening conversation:', { conversationId, receiverId, userName });
-                    openChat(conversationId, receiverId, userName);
+                    openChat(conversationId, receiverId, userName, userProfileImage);
                     showChatArea();
                 });
             });
@@ -1370,8 +1107,6 @@ if (isset($_GET['start_conversation'])) {
                     return;
                 }
 
-                console.log('Sending message:', message);
-
                 // Optimistic UI update
                 const tempId = 'temp-' + Date.now();
                 const messageRow = document.createElement('div');
@@ -1385,14 +1120,14 @@ if (isset($_GET['start_conversation'])) {
                 });
 
                 messageRow.innerHTML = `
-            <div class="message-bubble sent">
-                <div class="message-content">${escapeHtml(message)}</div>
-                <div class="message-time">${time}</div>
-            </div>
-            <div class="message-avatar">
-                <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
-            </div>
-        `;
+                    <div class="message-bubble sent">
+                        <div class="message-content">${escapeHtml(message)}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                    <div class="message-avatar">
+                        ${getProfileImageElement(currentUserProfileImage, '<?php echo $_SESSION['username']; ?>')}
+                    </div>
+                `;
 
                 const messagesContainer = document.getElementById('messages-container');
                 if (messagesContainer) {
@@ -1440,7 +1175,6 @@ if (isset($_GET['start_conversation'])) {
                     if (result.success) {
                         messageInput.value = '';
 
-                        // Update temporary message with real ID if available
                         if (result.message_id) {
                             const tempMessage = document.querySelector(`[data-message-id="${tempId}"]`);
                             if (tempMessage) {
@@ -1448,12 +1182,12 @@ if (isset($_GET['start_conversation'])) {
                             }
                         }
 
-                        // Update conversation preview
                         updateConversationPreview({
                             conversation_id: currentConversationId,
                             message: message,
                             created_at: new Date().toISOString(),
-                            sender_name: '<?php echo $_SESSION['username']; ?>'
+                            sender_name: '<?php echo $_SESSION['username']; ?>',
+                            sender_profile_image: currentUserProfileImage || null
                         });
 
                     } else {
@@ -1462,7 +1196,6 @@ if (isset($_GET['start_conversation'])) {
                 } catch (error) {
                     console.error('Error sending message:', error);
 
-                    // Remove optimistic message if failed
                     const tempMessage = document.querySelector(`[data-message-id="${tempId}"]`);
                     if (tempMessage) {
                         tempMessage.remove();
@@ -1470,7 +1203,6 @@ if (isset($_GET['start_conversation'])) {
 
                     alert('Error sending message: ' + error.message);
                 } finally {
-                    // Re-enable input
                     messageInput.disabled = false;
                     sendMessageBtn.disabled = false;
                     sendMessageBtn.innerHTML = originalBtnHtml;
@@ -1499,6 +1231,7 @@ if (isset($_GET['start_conversation'])) {
                             conversationChannel.trigger('client-typing', {
                                 user_id: currentUserId,
                                 username: '<?php echo $_SESSION['username']; ?>',
+                                profile_image: currentUserProfileImage || '',
                                 typing: true
                             });
                         }
@@ -1511,6 +1244,7 @@ if (isset($_GET['start_conversation'])) {
                             conversationChannel.trigger('client-typing', {
                                 user_id: currentUserId,
                                 username: '<?php echo $_SESSION['username']; ?>',
+                                profile_image: currentUserProfileImage || '',
                                 typing: false
                             });
                         }
@@ -1523,6 +1257,7 @@ if (isset($_GET['start_conversation'])) {
                         conversationChannel.trigger('client-typing', {
                             user_id: currentUserId,
                             username: '<?php echo $_SESSION['username']; ?>',
+                            profile_image: currentUserProfileImage || '',
                             typing: false
                         });
                     }
@@ -1541,7 +1276,7 @@ if (isset($_GET['start_conversation'])) {
                 }
             });
 
-            console.log('Messages page ready with polling enabled');
+            console.log('Messages page ready with profile images support');
         });
     </script>
 </body>

@@ -2,8 +2,6 @@
 // auth/pusher_auth.php - Manual authentication without Pusher SDK
 require_once __DIR__ . '/../includes/config.php';
 
-session_start();
-
 // Enable error reporting for debugging (remove in production)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -42,6 +40,11 @@ if (preg_match('/^private-chat-(\d+)$/', $channel_name, $matches)) {
         $stmt = $pdo->prepare("SELECT * FROM conversations WHERE id = ? AND (user1_id = ? OR user2_id = ?)");
         $stmt->execute([$conversation_id, $user_id, $user_id]);
         $conversation = $stmt->fetch();
+
+        $stmt = $pdo->prepare("SELECT profile_image FROM users WHERE id = ?");
+        $stmt->execute([$user_id]);
+        $user = $stmt->fetch();
+        $profile_image = $user['profile_image'] ?? '';
 
         if (!$conversation) {
             error_log("❌ User $user_id is NOT a member of conversation $conversation_id");
@@ -87,7 +90,8 @@ if (strpos($channel_name, 'presence-') === 0) {
     $auth['channel_data'] = json_encode([
         'user_id' => $user_id,
         'user_info' => [
-            'username' => $_SESSION['username'] ?? 'User'
+            'username' => $_SESSION['username'] ?? 'User',
+            'profile_image' => $profile_image
         ]
     ]);
 }

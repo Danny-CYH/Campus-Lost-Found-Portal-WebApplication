@@ -2,9 +2,6 @@
 // send_message.php
 require_once '../includes/config.php';
 
-// Start session at the very beginning
-session_start();
-
 // Set headers FIRST
 header('Content-Type: application/json');
 
@@ -73,7 +70,7 @@ try {
     $message_id = $pdo->lastInsertId();
 
     // Get sender info
-    $stmt = $pdo->prepare("SELECT username FROM users WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT username, profile_image FROM users WHERE id = ?");
     $stmt->execute([$sender_id]);
     $sender = $stmt->fetch();
 
@@ -87,6 +84,7 @@ try {
         'conversation_id' => $conversation_id,
         'sender_id' => $sender_id,
         'sender_name' => $sender['username'],
+        'sender_profile_image' => $sender['profile_image'],
         'receiver_id' => $receiver_id,
         'message' => $message,
         'created_at' => date('Y-m-d H:i:s'),
