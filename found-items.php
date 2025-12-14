@@ -387,10 +387,10 @@ if ($total_found_ever > 0) {
         </div>
     </section>
 
-    <section class="py-12 md:py-16 bg-gradient-to-r from-uum-green to-uum-blue">
+    <section class="py-12 md:py-16 bg-gradient-to-r from-uum-green to-uum-blue dark:from-gray-800 dark:to-gray-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">
-                Did you lose something?
+                Did you found something?
             </h2>
             <p class="text-lg text-green-100 mb-6 max-w-2xl mx-auto">
                 Check our "Found Items" list regularly. If your item isn't here, report it so others can contact you if
@@ -400,7 +400,7 @@ if ($total_found_ever > 0) {
                 <?php if (isset($_SESSION['user_id'])): ?>
                     <a href="report-item.php"
                         class="bg-white text-uum-green hover:bg-gray-100 px-6 md:px-8 py-3 rounded-xl font-semibold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg text-center">
-                        <i class="fas fa-plus-circle mr-2"></i>Report Lost Item
+                        <i class="fas fa-plus-circle mr-2"></i>Report Found Item
                     </a>
                 <?php else: ?>
                     <a href="auth/register.php"

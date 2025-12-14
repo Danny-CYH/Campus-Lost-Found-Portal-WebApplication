@@ -222,12 +222,12 @@ if (isset($_GET['start_conversation'])) {
                 <div class="flex flex-col md:flex-row h-full">
                     <!-- Conversations Sidebar -->
                     <div id="conversations-sidebar"
-                        class="conversations-sidebar flex flex-col border-r border-gray-200 bg-white">
+                        class="conversations-sidebar flex flex-col border-r border-gray-200 bg-white dark:bg-black">
                         <!-- Search Bar -->
                         <div class="p-4 border-b border-gray-200 flex-shrink-0">
                             <div class="relative">
                                 <input type="text" placeholder="Search conversations..."
-                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-black dark:text-white">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <i class="fas fa-search text-gray-400"></i>
                                 </div>
@@ -260,14 +260,14 @@ if (isset($_GET['start_conversation'])) {
                                             </div>
                                             <div class="flex-1 min-w-0">
                                                 <div class="flex items-center justify-between mb-1">
-                                                    <h3 class="font-semibold text-gray-900 truncate">
+                                                    <h3 class="font-semibold text-gray-900 truncate dark:text-white">
                                                         <?php echo htmlspecialchars($conv['username']); ?>
                                                     </h3>
                                                     <span class="text-xs text-gray-500">
                                                         <?php echo $conv['last_message_time'] ? date('M j', strtotime($conv['last_message_time'])) : ''; ?>
                                                     </span>
                                                 </div>
-                                                <p class="text-sm text-gray-600 truncate">
+                                                <p class="text-sm text-gray-600 truncate dark:text-gray-400">
                                                     <?php
                                                     $last_message = $conv['last_message'] ?
                                                         (strlen($conv['last_message']) > 50 ?
@@ -295,7 +295,8 @@ if (isset($_GET['start_conversation'])) {
                     <div id="chat-area" class="chat-area flex-1 flex-col bg-gray-50">
                         <div class="chat-area-inner h-full">
                             <!-- Chat Header -->
-                            <div id="chat-header" class="p-4 border-b border-gray-200 bg-white flex-shrink-0 hidden">
+                            <div id="chat-header"
+                                class="p-4 border-b border-gray-200 bg-white flex-shrink-0 hidden dark:bg-black">
                                 <div class="flex items-center space-x-3">
                                     <div class="relative">
                                         <div class="chat-header-avatar" id="chat-header-avatar">
@@ -306,19 +307,9 @@ if (isset($_GET['start_conversation'])) {
                                         </div>
                                     </div>
                                     <div class="flex-1">
-                                        <h4 id="chat-header-username" class="font-semibold text-gray-900"></h4>
+                                        <h4 id="chat-header-username"
+                                            class="font-semibold text-gray-900 dark:text-white"></h4>
                                         <p class="text-sm text-green-600">Online</p>
-                                    </div>
-                                    <div class="flex items-center space-x-2">
-                                        <button class="p-2 text-gray-500 hover:text-gray-700">
-                                            <i class="fas fa-phone"></i>
-                                        </button>
-                                        <button class="p-2 text-gray-500 hover:text-gray-700">
-                                            <i class="fas fa-video"></i>
-                                        </button>
-                                        <button class="p-2 text-gray-500 hover:text-gray-700">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -348,7 +339,8 @@ if (isset($_GET['start_conversation'])) {
                                         <i class="fas fa-image"></i>
                                     </button>
                                     <input type="text" id="message-input" placeholder="Type your message..."
-                                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        autocomplete="off"
+                                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-white dark:bg-black dark:text-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         disabled>
                                     <button id="send-message"
                                         class="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -382,9 +374,18 @@ if (isset($_GET['start_conversation'])) {
 
             // ===== PROFILE IMAGE FUNCTIONS =====
             function getProfileImageElement(profileImage, username, size = 'medium') {
-                if (profileImage && profileImage !== 'null' && profileImage !== '') {
-                    return `<img src="uploads/profile_images/${profileImage}" alt="${username}" class="profile-image">`;
+                // Check if profileImage is valid
+                if (profileImage &&
+                    profileImage !== 'null' &&
+                    profileImage !== 'undefined' &&
+                    profileImage.trim() !== '' &&
+                    !profileImage.startsWith('undefined')) {
+
+                    // Make sure the path is correct
+                    const imagePath = `uploads/profile_images/${profileImage}`;
+                    return `<img src="${imagePath}" alt="${username || 'User'}" class="profile-image">`;
                 } else {
+                    // Use initials if no profile image
                     const initials = username ? username.substring(0, 2).toUpperCase() : 'U';
                     return initials;
                 }
@@ -432,7 +433,7 @@ if (isset($_GET['start_conversation'])) {
                     }
 
                     const result = await response.json();
-                    console.log('Polling response:', result);
+                    // console.log('Polling response:', result);
 
                     // Ensure messages is an array
                     if (!Array.isArray(messages)) {
@@ -527,7 +528,7 @@ if (isset($_GET['start_conversation'])) {
                     });
 
                     conversationChannel.bind('new-message', (data) => {
-                        console.log('📨 NEW MESSAGE received via Pusher:', data);
+                        // console.log('📨 NEW MESSAGE received via Pusher:', data);
                         handleIncomingMessage(data);
                     });
 
@@ -605,32 +606,47 @@ if (isset($_GET['start_conversation'])) {
                 messageRow.className = `message-row ${!isReceived ? 'sent' : 'received'}`;
                 messageRow.setAttribute('data-message-id', messageData.message_id || messageData.id);
 
-                const senderProfileImage = isReceived ?
-                    (messageData.sender_profile_image || null) :
-                    currentUserProfileImage;
+                // Determine sender's profile image and name
+                let senderProfileImage, senderName;
 
-                const senderName = isReceived ?
-                    (messageData.sender_username || currentReceiverName) :
-                    '<?php echo $_SESSION['username']; ?>';
+                if (isReceived) {
+                    // Message from other user
+                    senderProfileImage = messageData.sender_profile_image || currentReceiverProfileImage;
+                    senderName = messageData.sender_username || currentReceiverName || 'User';
+                } else {
+                    // Message from current user
+                    senderProfileImage = currentUserProfileImage;
+                    senderName = '<?php echo $_SESSION['username']; ?>';
+                }
+
+                // Create profile image HTML
+                let profileImageHtml = '';
+                if (senderProfileImage && senderProfileImage !== 'null' && senderProfileImage.trim() !== '') {
+                    profileImageHtml = `<img src="uploads/profile_images/${senderProfileImage}" alt="${senderName}" class="profile-image">`;
+                } else {
+                    // Use initials if no profile image
+                    const initials = senderName ? senderName.substring(0, 2).toUpperCase() : (isReceived ? 'TU' : 'ME');
+                    profileImageHtml = initials;
+                }
 
                 messageRow.innerHTML = `
-                    ${isReceived ? `
-                        <div class="message-avatar">
-                            ${getProfileImageElement(senderProfileImage, senderName)}
-                        </div>
-                    ` : ''}
-                    
-                    <div class="message-bubble ${!isReceived ? 'sent' : 'received'}">
-                        <div class="message-content">${escapeHtml(messageData.message)}</div>
-                        <div class="message-time">${time}</div>
-                    </div>
-                    
-                    ${!isReceived ? `
-                        <div class="message-avatar">
-                            ${getProfileImageElement(currentUserProfileImage, '<?php echo $_SESSION['username']; ?>')}
-                        </div>
-                    ` : ''}
-                `;
+        ${isReceived ? `
+            <div class="message-avatar">
+                ${profileImageHtml}
+            </div>
+        ` : ''}
+        
+        <div class="message-bubble ${!isReceived ? 'sent' : 'received'}">
+            <div class="message-content">${escapeHtml(messageData.message)}</div>
+            <div class="message-time">${time}</div>
+        </div>
+        
+        ${!isReceived ? `
+            <div class="message-avatar">
+                ${profileImageHtml}
+            </div>
+        ` : ''}
+    `;
 
                 messagesContainer.appendChild(messageRow);
             }
@@ -671,7 +687,7 @@ if (isset($_GET['start_conversation'])) {
                     }
 
                     const result = await response.json();
-                    console.log('API response:', result);
+                    // console.log('API response:', result);
 
                     // Check if result is an array
                     if (!Array.isArray(result)) {
@@ -839,6 +855,7 @@ if (isset($_GET['start_conversation'])) {
             function updateConversationPreview(data) {
                 const conversationItem = document.querySelector(`.conversation-item[data-conversation-id="${data.conversation_id}"]`);
                 if (conversationItem) {
+                    // Update the last message preview
                     const previewElement = conversationItem.querySelector('.text-gray-600');
                     if (previewElement) {
                         const truncatedMessage = data.message.length > 50
@@ -847,6 +864,7 @@ if (isset($_GET['start_conversation'])) {
                         previewElement.textContent = truncatedMessage;
                     }
 
+                    // Update the timestamp
                     const timeElement = conversationItem.querySelector('.text-xs');
                     if (timeElement) {
                         try {
@@ -875,6 +893,7 @@ if (isset($_GET['start_conversation'])) {
                         }
                     }
 
+                    // Move conversation to top if it's not the current one
                     if (data.conversation_id != currentConversationId) {
                         const conversationsList = document.querySelector('.conversations-list');
                         if (conversationsList && conversationItem.parentNode === conversationsList) {
@@ -882,16 +901,14 @@ if (isset($_GET['start_conversation'])) {
                         }
                     }
 
-                    // Update profile image if we have new data
-                    if (data.sender_profile_image && data.sender_id != currentUserId) {
-                        const profileImageContainer = conversationItem.querySelector('.profile-image-container');
-                        if (profileImageContainer) {
-                            profileImageContainer.innerHTML = getProfileImageElement(
-                                data.sender_profile_image,
-                                data.sender_name
-                            );
-                        }
-                    }
+                    // REMOVED OR MODIFIED: Do NOT update the profile image when messages come in
+                    // Only update the profile image if we're opening the chat for the first time
+                    // or if we have a specific reason to update it
+                    // (this prevents the image from changing when you send messages)
+
+                    // Note: The profile image should remain static as it was when the conversation
+                    // was loaded. If you need to update the profile image (like when a user changes
+                    // their profile picture), you should handle that separately.
                 }
             }
 
@@ -1107,6 +1124,9 @@ if (isset($_GET['start_conversation'])) {
                     return;
                 }
 
+                // Get current user's username from PHP session
+                const currentUsername = '<?php echo $_SESSION['username']; ?>';
+
                 // Optimistic UI update
                 const tempId = 'temp-' + Date.now();
                 const messageRow = document.createElement('div');
@@ -1119,15 +1139,25 @@ if (isset($_GET['start_conversation'])) {
                     hour12: true
                 });
 
+                // Create profile image HTML for optimistic update
+                let profileImageHtml = '';
+                if (currentUserProfileImage && currentUserProfileImage !== 'null' && currentUserProfileImage.trim() !== '') {
+                    profileImageHtml = `<img src="uploads/profile_images/${currentUserProfileImage}" alt="${currentUsername}" class="profile-image">`;
+                } else {
+                    // Use initials if no profile image
+                    const initials = currentUsername ? currentUsername.substring(0, 2).toUpperCase() : 'ME';
+                    profileImageHtml = initials;
+                }
+
                 messageRow.innerHTML = `
-                    <div class="message-bubble sent">
-                        <div class="message-content">${escapeHtml(message)}</div>
-                        <div class="message-time">${time}</div>
-                    </div>
-                    <div class="message-avatar">
-                        ${getProfileImageElement(currentUserProfileImage, '<?php echo $_SESSION['username']; ?>')}
-                    </div>
-                `;
+        <div class="message-bubble sent">
+            <div class="message-content">${escapeHtml(message)}</div>
+            <div class="message-time">${time}</div>
+        </div>
+        <div class="message-avatar">
+            ${profileImageHtml}
+        </div>
+    `;
 
                 const messagesContainer = document.getElementById('messages-container');
                 if (messagesContainer) {
@@ -1159,7 +1189,7 @@ if (isset($_GET['start_conversation'])) {
                     }
 
                     const responseText = await response.text();
-                    console.log('Raw response:', responseText);
+                    // console.log('Raw response:', responseText);
 
                     let result;
                     try {
@@ -1170,7 +1200,7 @@ if (isset($_GET['start_conversation'])) {
                         throw new Error('Invalid server response');
                     }
 
-                    console.log('Send message response:', result);
+                    // console.log('Send message response:', result);
 
                     if (result.success) {
                         messageInput.value = '';
@@ -1275,8 +1305,6 @@ if (isset($_GET['start_conversation'])) {
                     showConversationsSidebar();
                 }
             });
-
-            console.log('Messages page ready with profile images support');
         });
     </script>
 </body>

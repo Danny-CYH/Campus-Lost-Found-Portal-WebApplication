@@ -501,7 +501,7 @@ if ($total_lost_ever > 0) {
     </section>
 
     <!-- CTA Section -->
-    <section class="py-12 md:py-16 bg-gradient-to-r from-uum-green to-uum-blue">
+    <section class="py-12 md:py-16 bg-gradient-to-r from-uum-green to-uum-blue dark:from-gray-800 dark:to-gray-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">
                 Can't Find What You're Looking For?

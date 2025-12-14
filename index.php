@@ -537,7 +537,7 @@ require_once 'includes/header.php';
     </section>
 
     <!-- CTA Section -->
-    <section class="py-12 md:py-20 bg-gradient-to-r from-uum-green to-uum-blue">
+    <section class="py-12 md:py-20 bg-gradient-to-r from-uum-green to-uum-blue dark:from-gray-800 dark:to-gray-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4 md:mb-6">
                 Ready to Find Your Lost Items at UUM?
