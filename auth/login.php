@@ -267,22 +267,6 @@ unset($_SESSION['login_success']);
                         </div>
                     </div>
 
-                    <!-- Remember Me & Forgot Password -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <input id="remember_me" name="remember_me" type="checkbox"
-                                class="w-4 h-4 text-uum-green focus:ring-uum-green border-gray-300 rounded">
-                            <label for="remember_me" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                                Remember me
-                            </label>
-                        </div>
-
-                        <a href="forgot_password.php"
-                            class="text-sm font-medium text-uum-green hover:text-uum-blue transition-colors">
-                            Forgot password?
-                        </a>
-                    </div>
-
                     <!-- Submit Button -->
                     <button type="submit"
                         class="w-full bg-gradient-to-r from-uum-green to-uum-blue hover:from-uum-blue hover:to-uum-green text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-uum-green focus:ring-offset-2">
